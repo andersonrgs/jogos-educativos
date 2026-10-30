@@ -12,16 +12,18 @@
         /* Fonte lúdica e arredondada */
         body {
             font-family: 'Fredoka One', cursive, sans-serif;
-            background-color: #e0f7fa; /* Tom pastel suave verde-água/azul */
-            touch-action: manipulation; /* Evita zoom acidental no mobile ao tocar rápido */
+            background: linear-gradient(180deg, #e0f7fa 0%, #fff3e0 100%);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* Animação do Emoji Pular (Vitória) */
         @keyframes jump {
             0%, 100% { transform: translateY(0) scale(1); }
-            30% { transform: translateY(-40px) scale(1.1) rotate(-5deg); }
+            30% { transform: translateY(-30px) scale(1.15) rotate(-5deg); }
             50% { transform: translateY(0) scale(1.05) rotate(5deg); }
-            70% { transform: translateY(-20px) scale(1.1) rotate(-3deg); }
+            70% { transform: translateY(-15px) scale(1.1) rotate(-3deg); }
         }
         .anim-jump {
             animation: jump 1s ease-in-out infinite;
@@ -39,69 +41,82 @@
 
         /* Estilo da Letra Selecionada */
         .selected-letter {
-            transform: scale(1.15) translateY(-10px);
-            box-shadow: 0 15px 25px rgba(0,0,0,0.2);
-            border: 4px solid #fff;
+            transform: scale(1.18) translateY(-10px) !important;
+            box-shadow: 0 16px 25px rgba(0,0,0,0.25) !important;
+            border-color: #ffffff !important;
             filter: brightness(1.1);
         }
 
         /* Botões Base */
         .letter-btn, .slot {
             transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Efeito visual nos botões para dar aspecto de profundidade */
+        /* Efeito de profundidade 3D nos botões */
         .btn-depth {
             box-shadow: 0 6px 0px rgba(0,0,0,0.2);
         }
         .btn-depth:active {
-            transform: translateY(6px);
-            box-shadow: 0 0px 0px rgba(0,0,0,0.2);
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px rgba(0,0,0,0.2);
         }
 
         /* Animação de pulso no botão 'Próxima Palavra' */
         @keyframes pulse-btn {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            50% { transform: scale(1.06); }
         }
         .anim-pulse {
-            animation: pulse-btn 2s infinite;
+            animation: pulse-btn 1.5s infinite;
         }
     </style>
 </head>
-<body class="overflow-hidden flex flex-col items-center justify-between h-screen w-screen relative">
+<body class="overflow-hidden flex flex-col items-center justify-between min-h-screen w-screen relative">
 
     <!-- Canvas para Efeitos de Estrelas na Vitória -->
     <canvas id="victory-canvas" class="absolute inset-0 pointer-events-none z-50"></canvas>
 
+    <!-- Barra de navegação superior (Voltar ao Menu + Falar palavra) -->
+    <header class="w-full max-w-4xl px-4 pt-3 flex justify-between items-center z-20">
+        <a href="index.html" class="px-4 py-2 bg-white/90 hover:bg-white text-gray-700 text-lg rounded-2xl shadow-md border-2 border-gray-200 flex items-center gap-1">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="text-sm sm:text-base font-bold bg-white/80 px-4 py-1.5 rounded-full text-indigo-700 shadow-sm" id="progress-info">
+            Palavra 1 de 31
+        </div>
+        <button id="speaker-btn" title="Ouvir palavra" class="px-3 py-2 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-xl rounded-2xl shadow-md flex items-center gap-1 active:scale-95">
+            🔊
+        </button>
+    </header>
+
     <!-- Container Principal do Jogo -->
-    <main class="relative z-10 flex flex-col items-center justify-center w-full h-full max-w-4xl p-4 sm:p-8">
+    <main class="relative z-10 flex flex-col items-center justify-between w-full flex-1 max-w-4xl p-3 sm:p-6">
         
-        <!-- Cabeçalho / Ilustração -->
-        <div class="flex-1 flex items-center justify-center min-h-[150px] sm:min-h-[200px]">
-            <div id="emoji-display" class="text-8xl sm:text-[150px] drop-shadow-2xl transition-transform duration-300">
+        <!-- Ilustração / Emoji interativo -->
+        <div class="flex flex-col items-center justify-center my-auto cursor-pointer" id="emoji-wrapper" title="Tocar para ouvir a palavra">
+            <div id="emoji-display" class="text-8xl sm:text-[140px] drop-shadow-2xl transition-transform duration-300 hover:scale-105 active:scale-95">
                 <!-- Emoji injetado via JS -->
             </div>
+            <span class="text-sm sm:text-base text-gray-500 font-sans mt-1">Toque para ouvir 🔊</span>
         </div>
 
-        <!-- Área Central / Silhuetas (Alvos) -->
-        <div class="flex-1 flex flex-col justify-center items-center w-full mb-6">
-            <div id="slots-container" class="flex flex-wrap justify-center gap-2 sm:gap-4 w-full">
+        <!-- Área Central / Silhuetas (Alvos das Letras) -->
+        <div class="flex flex-col justify-center items-center w-full my-auto">
+            <div id="slots-container" class="flex flex-wrap justify-center gap-2 sm:gap-3.5 w-full">
                 <!-- Silhuetas injetadas via JS -->
             </div>
         </div>
 
-        <!-- Área Inferior / Letras (Peças) -->
-        <div class="flex-1 flex flex-col justify-center items-center w-full min-h-[120px]">
-            <div id="letters-container" class="flex flex-wrap justify-center gap-3 sm:gap-5 w-full">
+        <!-- Área Inferior / Letras Embaralhadas (Bandeja) -->
+        <div class="flex flex-col justify-center items-center w-full min-h-[120px] mb-2 sm:mb-4">
+            <div id="letters-container" class="flex flex-wrap justify-center gap-2.5 sm:gap-4 w-full">
                 <!-- Letras injetadas via JS -->
             </div>
 
-            <!-- Botão Próxima Palavra (Oculto inicialmente) -->
-            <button id="next-btn" class="hidden mt-6 px-8 py-4 bg-green-500 text-white text-2xl sm:text-3xl rounded-3xl border-b-8 border-green-700 active:border-b-0 active:translate-y-2 shadow-xl anim-pulse flex items-center gap-2">
-                Continuar <span class="text-4xl">▶</span>
+            <!-- Botão Próxima Palavra -->
+            <button id="next-btn" class="hidden px-8 py-3.5 bg-green-500 hover:bg-green-600 text-white text-2xl sm:text-3xl rounded-3xl border-b-8 border-green-700 active:border-b-0 active:translate-y-2 shadow-2xl anim-pulse flex items-center gap-3">
+                <span>Muito Bem! Próxima</span> <span class="text-3xl sm:text-4xl">▶</span>
             </button>
         </div>
 
@@ -109,60 +124,111 @@
 
     <script>
         /**
-         * Lógica do Jogo Encaixe das Letrinhas
+         * Lógica do Jogo Encaixe das Letrinhas Educativo
          */
 
-        // 1. DADOS DO JOGO - Progressão e Palavras
-        const wordsList = [
-            // Fase 1: 3 letras
+        // 1. BANCO DE PALAVRAS EXPANDIDO (Com as originais + novas palavras lúdicas infantis)
+        const allWords = [
+            // Palavras originais
             { word: "BOI", emoji: "🐂" },
             { word: "CÃO", emoji: "🐕" },
             { word: "UVA", emoji: "🍇" },
-            // Fase 2: 4 letras
             { word: "GATO", emoji: "🐈" },
             { word: "SAPO", emoji: "🐸" },
             { word: "BOLA", emoji: "⚽" },
-            // Fase 3: 5 a 6 letras
             { word: "PORCO", emoji: "🐖" },
             { word: "PEIXE", emoji: "🐟" },
             { word: "CAVALO", emoji: "🐎" },
-            // Fase 4: Desafio Final
             { word: "FORMIGA", emoji: "🐜" },
-            { word: "CACHORRO", emoji: "🐶" }
+            { word: "CACHORRO", emoji: "🐶" },
+
+            // Novas palavras educativas adicionadas (comidas, animais, brinquedos, natureza)
+            { word: "SOL", emoji: "☀️" },
+            { word: "LUA", emoji: "🌙" },
+            { word: "PATO", emoji: "🦆" },
+            { word: "LEÃO", emoji: "🦁" },
+            { word: "MAÇÃ", emoji: "🍎" },
+            { word: "BOLO", emoji: "🎂" },
+            { word: "PIPA", emoji: "🪁" },
+            { word: "CASA", emoji: "🏠" },
+            { word: "MACACO", emoji: "🐒" },
+            { word: "BANANA", emoji: "🍌" },
+            { word: "PIPOCA", emoji: "🍿" },
+            { word: "TARTARUGA", emoji: "🐢" },
+            { word: "ELEFANTE", emoji: "🐘" },
+            { word: "GIRAFA", emoji: "🦒" },
+            { word: "BORBOLETA", emoji: "🦋" },
+            { word: "CORAÇÃO", emoji: "❤️" },
+            { word: "TREM", emoji: "🚂" },
+            { word: "CARRO", emoji: "🚗" },
+            { word: "FLOR", emoji: "🌸" },
+            { word: "MELANCIA", emoji: "🍉" }
         ];
 
-        // 2. ESTADO DO JOGO
+        // 2. EMBARALHAMENTO RANDÔMICO DAS PALAVRAS
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        let wordsList = shuffleArray(allWords);
         let currentWordIndex = 0;
         let currentWord = "";
         let selectedLetterBtn = null;
         let correctlyPlacedCount = 0;
-        let audioCtx = null; // Para os sons gerados via Web Audio API
+        let audioCtx = null;
 
-        // 3. REFERÊNCIAS DO DOM
+        // 3. ELEMENTOS DO DOM
         const emojiDisplay = document.getElementById('emoji-display');
+        const emojiWrapper = document.getElementById('emoji-wrapper');
         const slotsContainer = document.getElementById('slots-container');
         const lettersContainer = document.getElementById('letters-container');
         const nextBtn = document.getElementById('next-btn');
+        const progressInfo = document.getElementById('progress-info');
+        const speakerBtn = document.getElementById('speaker-btn');
+
+        // Pronúncias amigáveis para caracteres especiais/acentuados em português
+        const phoneticLetters = {
+            'A': 'A', 'Á': 'A', 'Ã': 'Ã', 'Â': 'A',
+            'B': 'Bê', 'C': 'Cê', 'Ç': 'Cê-cedilha', 'D': 'Dê',
+            'E': 'É', 'É': 'É', 'Ê': 'Ê', 'F': 'Efe',
+            'G': 'Gê', 'H': 'Agá', 'I': 'I', 'Í': 'I',
+            'J': 'Jota', 'K': 'Cá', 'L': 'Ele', 'M': 'Eme',
+            'N': 'Ene', 'O': 'Ó', 'Ó': 'Ó', 'Ô': 'Ô', 'Õ': 'Õ',
+            'P': 'Pê', 'Q': 'Quê', 'R': 'Erre', 'S': 'Esse',
+            'T': 'Tê', 'U': 'U', 'Ú': 'U', 'V': 'Vê',
+            'W': 'Dáblio', 'X': 'Xis', 'Y': 'Ípsilon', 'Z': 'Zê'
+        };
 
         // 4. INICIALIZAÇÃO
         function initGame() {
             loadWord(currentWordIndex);
-            
-            // Evento de próxima palavra
+
             nextBtn.addEventListener('click', () => {
                 currentWordIndex++;
                 if (currentWordIndex >= wordsList.length) {
-                    currentWordIndex = 0; // Reinicia o jogo ao terminar
+                    wordsList = shuffleArray(allWords);
+                    currentWordIndex = 0;
                 }
                 loadWord(currentWordIndex);
             });
 
-            // Inicializa áudio no primeiro toque na tela para evitar bloqueio do navegador
+            speakerBtn.addEventListener('click', () => {
+                speakText(currentWord);
+            });
+
+            emojiWrapper.addEventListener('click', () => {
+                speakText(currentWord);
+            });
+
             document.body.addEventListener('pointerdown', initAudio, { once: true });
         }
 
         function loadWord(index) {
-            // Limpa o estado
             selectedLetterBtn = null;
             correctlyPlacedCount = 0;
             emojiDisplay.classList.remove('anim-jump');
@@ -175,111 +241,115 @@
             const levelData = wordsList[index];
             currentWord = levelData.word;
             emojiDisplay.textContent = levelData.emoji;
+            progressInfo.textContent = `Palavra ${index + 1} de ${wordsList.length}`;
 
             const charsArray = Array.from(currentWord);
-            
+
             // Criar Silhuetas
-            charsArray.forEach((char, i) => {
+            charsArray.forEach((char) => {
                 const slot = document.createElement('div');
-                // Estilo da silhueta vazada: Fundo translúcido, borda tracejada
-                slot.className = `slot w-16 h-20 sm:w-20 sm:h-24 flex items-center justify-center text-4xl sm:text-5xl rounded-2xl
-                                  border-4 border-dashed border-gray-400 bg-gray-200/50 text-gray-400 cursor-pointer`;
-                slot.textContent = char; // A letra fica visível como dica suave
+                const isSmall = charsArray.length > 6;
+                const sizeClass = isSmall 
+                    ? 'w-12 h-16 sm:w-16 sm:h-20 text-3xl sm:text-4xl' 
+                    : 'w-14 h-18 sm:w-20 sm:h-24 text-4xl sm:text-5xl';
+
+                slot.className = `slot ${sizeClass} flex items-center justify-center rounded-2xl
+                                  border-4 border-dashed border-gray-400 bg-gray-200/50 text-gray-400 cursor-pointer shadow-inner`;
+                slot.textContent = char;
                 slot.dataset.char = char;
                 slot.dataset.filled = "false";
-                
-                // Evento de toque na silhueta
+
                 slot.addEventListener('click', () => handleSlotClick(slot));
                 slotsContainer.appendChild(slot);
             });
 
-            // Criar Letras Embaralhadas
-            // Embaralhar
-            const shuffledChars = [...charsArray].sort(() => Math.random() - 0.5);
+            // Criar Letras Embaralhadas na Bandeja
+            const shuffledChars = shuffleArray(charsArray);
 
-            shuffledChars.forEach((char, i) => {
+            shuffledChars.forEach((char) => {
                 const btn = document.createElement('div');
-                
-                // Determina se é vogal ou consoante para aplicar cores
                 const isVowel = /^[AEIOUÁÉÍÓÚÂÊÔÃÕ]$/i.test(char);
-                
-                // Vogais: Vermelhas/Amarelas (Aqui usaremos Amarelo vibrante com texto laranja/vermelho)
-                // Consoantes: Azuis/Verdes (Aqui usaremos Azul vibrante)
-                let colorClasses = isVowel 
-                    ? 'bg-yellow-300 border-yellow-500 text-orange-600' 
-                    : 'bg-blue-400 border-blue-600 text-white';
 
-                btn.className = `letter-btn btn-depth w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-4xl sm:text-5xl rounded-2xl cursor-pointer border-b-8 ${colorClasses}`;
+                let colorClasses = isVowel 
+                    ? 'bg-amber-300 border-amber-500 text-amber-900' 
+                    : 'bg-sky-400 border-sky-600 text-white';
+
+                const isSmall = charsArray.length > 6;
+                const sizeClass = isSmall 
+                    ? 'w-12 h-14 sm:w-16 sm:h-18 text-3xl sm:text-4xl' 
+                    : 'w-14 h-16 sm:w-20 sm:h-20 text-4xl sm:text-5xl';
+
+                btn.className = `letter-btn btn-depth ${sizeClass} flex items-center justify-center rounded-2xl cursor-pointer border-b-8 ${colorClasses} font-black`;
                 btn.textContent = char;
                 btn.dataset.char = char;
-                btn.dataset.colorClass = colorClasses; // Guardamos para pintar o slot depois
-                
-                // Evento de toque na letra
+                btn.dataset.colorClass = colorClasses;
+
                 btn.addEventListener('click', () => handleLetterSelect(btn));
                 lettersContainer.appendChild(btn);
             });
+
+            setTimeout(() => {
+                speakText(currentWord);
+            }, 300);
         }
 
-        // 5. INTERAÇÕES
+        // 5. INTERAÇÕES E PRONÚNCIA
         function handleLetterSelect(btn) {
-            // Se o botão já foi usado/escondido, ignora
             if (btn.style.visibility === 'hidden') return;
 
-            // Reproduz um pequeno clique (Opcional, apenas para feedback)
             playSound('tick');
+            speakLetter(btn.dataset.char);
 
-            // Remove a seleção anterior
             if (selectedLetterBtn) {
                 selectedLetterBtn.classList.remove('selected-letter');
             }
 
-            // Seleciona a nova
             selectedLetterBtn = btn;
             selectedLetterBtn.classList.add('selected-letter');
         }
 
         function handleSlotClick(slot) {
-            // Se nenhuma letra foi selecionada ou se o slot já está preenchido
-            if (!selectedLetterBtn || slot.dataset.filled === "true") {
-                if(!selectedLetterBtn && slot.dataset.filled === "false") {
-                     // Feedback visual de que precisa selecionar uma letra primeiro
-                     lettersContainer.classList.add('anim-shake');
-                     setTimeout(() => lettersContainer.classList.remove('anim-shake'), 400);
+            if (!selectedLetterBtn) {
+                if (slot.dataset.filled === "false") {
+                    speakLetter(slot.dataset.char);
+                    lettersContainer.classList.add('anim-shake');
+                    setTimeout(() => lettersContainer.classList.remove('anim-shake'), 400);
+                } else {
+                    speakLetter(slot.dataset.char);
                 }
                 return;
             }
 
-            // Verifica se a letra selecionada é a correta para este slot
-            if (selectedLetterBtn.dataset.char === slot.dataset.char) {
-                // ACERTO!
-                playSound('success');
-                
-                // Preenche o slot
-                slot.dataset.filled = "true";
-                // Remove estilos de silhueta
-                slot.classList.remove('border-dashed', 'border-gray-400', 'bg-gray-200/50', 'text-gray-400');
-                
-                // Adiciona os estilos coloridos da letra
-                const colorClasses = selectedLetterBtn.dataset.colorClass.split(' ');
-                // Ajusta a borda do slot preenchido
-                slot.classList.add('border-solid', 'border-4', ...colorClasses);
-                // Remove a borda grossa (border-b-8) que era da peça solta, usando border-4
-                slot.classList.remove('border-b-8'); 
-                slot.textContent = slot.dataset.char; // Garante opacidade 100%
+            if (slot.dataset.filled === "true") {
+                speakLetter(slot.dataset.char);
+                return;
+            }
 
-                // Esconde a letra do pool (Bandeja)
+            // ACERTOU!
+            if (selectedLetterBtn.dataset.char === slot.dataset.char) {
+                playSound('success');
+                speakLetter(slot.dataset.char);
+
+                slot.dataset.filled = "true";
+                slot.classList.remove('border-dashed', 'border-gray-400', 'bg-gray-200/50', 'text-gray-400', 'shadow-inner');
+
+                const colorClasses = selectedLetterBtn.dataset.colorClass.split(' ');
+                slot.classList.add('border-solid', 'border-4', ...colorClasses);
+                slot.classList.remove('border-b-8');
+                slot.textContent = slot.dataset.char;
+
                 selectedLetterBtn.style.visibility = 'hidden';
                 selectedLetterBtn.classList.remove('selected-letter');
                 selectedLetterBtn = null;
 
                 correctlyPlacedCount++;
 
-                // Verifica Vitória
                 if (correctlyPlacedCount === currentWord.length) {
-                    triggerWin();
+                    setTimeout(() => {
+                        triggerWin();
+                    }, 400);
                 }
             } else {
-                // ERRO!
                 playSound('error');
                 slot.classList.add('anim-shake');
                 setTimeout(() => slot.classList.remove('anim-shake'), 400);
@@ -288,20 +358,44 @@
 
         function triggerWin() {
             playSound('win');
-            speakWord(currentWord);
-            
-            // Anima o Emoji
+            speakText(currentWord);
+
             emojiDisplay.classList.add('anim-jump');
-            
-            // Esconde bandeja vazia e mostra botão
             lettersContainer.classList.add('hidden');
             nextBtn.classList.remove('hidden');
 
-            // Inicia partículas (Estrelinhas)
             startParticles();
         }
 
-        // 6. SISTEMA DE ÁUDIO SINTÉTICO (Sem dependências externas)
+        // 6. SÍNTESE DE VOZ EDUCATIVA (Text-To-Speech nativo)
+        function speakLetter(char) {
+            const letterSound = phoneticLetters[char.toUpperCase()] || char;
+            speakText(letterSound, 0.9, 1.25);
+        }
+
+        function speakText(text, rate = 0.85, pitch = 1.15) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // 7. SISTEMA DE EFEITOS SONOROS (Web Audio API)
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -310,84 +404,61 @@
 
         function playSound(type) {
             if (!audioCtx) return;
-            // Se o contexto foi suspenso (políticas do navegador), retoma
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
+            const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
-            const now = audioCtx.currentTime;
 
             switch(type) {
                 case 'tick':
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(800, now);
-                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.frequency.setValueAtTime(700, now);
+                    osc.frequency.exponentialRampToValueAtTime(350, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
                     osc.start(now);
-                    osc.stop(now + 0.1);
+                    osc.stop(now + 0.08);
                     break;
                 case 'success':
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(600, now);
-                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
-                    gain.gain.setValueAtTime(0.5, now);
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.15);
+                    gain.gain.setValueAtTime(0.35, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
                     osc.start(now);
                     osc.stop(now + 0.15);
                     break;
                 case 'error':
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(200, now);
-                    osc.frequency.linearRampToValueAtTime(150, now + 0.3);
-                    gain.gain.setValueAtTime(0.3, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                     osc.start(now);
-                    osc.stop(now + 0.3);
+                    osc.stop(now + 0.25);
                     break;
                 case 'win':
-                    // Arpejo feliz (Acorde maior)
-                    const notes = [523.25, 659.25, 783.99, 1046.50]; // Dó, Mi, Sol, Dó
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
                     notes.forEach((freq, i) => {
                         const o = audioCtx.createOscillator();
                         const g = audioCtx.createGain();
-                        o.type = 'square';
+                        o.type = 'sine';
                         o.frequency.value = freq;
                         o.connect(g);
                         g.connect(audioCtx.destination);
-                        
-                        g.gain.setValueAtTime(0.15, now + i * 0.1);
-                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
-                        
-                        o.start(now + i * 0.1);
-                        o.stop(now + i * 0.1 + 0.3);
+                        g.gain.setValueAtTime(0.18, now + i * 0.09);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.09 + 0.28);
+                        o.start(now + i * 0.09);
+                        o.stop(now + i * 0.09 + 0.28);
                     });
                     break;
             }
         }
 
-        // Função de Text-to-Speech (Sintetizador de Voz Nativo)
-        function speakWord(word) {
-            if ('speechSynthesis' in window) {
-                // Cancela qualquer fala que esteja na fila para evitar sobreposição
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(word);
-                utterance.lang = 'pt-BR'; // Português do Brasil
-                utterance.rate = 0.85;    // Velocidade um pouco mais lenta (ideal para crianças)
-                utterance.pitch = 1.2;    // Tom de voz levemente mais agudo/alegre
-                
-                // Aguarda 400ms para a musiquinha de vitória tocar primeiro
-                setTimeout(() => {
-                    window.speechSynthesis.speak(utterance);
-                }, 400); 
-            }
-        }
-
-        // 7. SISTEMA DE PARTÍCULAS (ESTRELAS EM CANVAS)
+        // 8. EFEITO DE ESTRELAS (Canvas Particle System)
         const canvas = document.getElementById('victory-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -404,23 +475,19 @@
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
-                // Velocidade explosiva
                 const angle = Math.random() * Math.PI * 2;
-                const speed = Math.random() * 15 + 5;
+                const speed = Math.random() * 14 + 4;
                 this.vx = Math.cos(angle) * speed;
                 this.vy = Math.sin(angle) * speed;
-                this.gravity = 0.4;
-                this.size = Math.random() * 15 + 10;
+                this.gravity = 0.35;
+                this.size = Math.random() * 14 + 8;
                 this.rotation = Math.random() * 360;
-                this.rotationSpeed = (Math.random() - 0.5) * 15;
-                this.life = 1.0; // Opacidade
+                this.rotationSpeed = (Math.random() - 0.5) * 12;
+                this.life = 1.0;
                 this.decay = Math.random() * 0.015 + 0.01;
-                
-                // Cores lúdicas (Amarelo, Laranja, Rosa, Ciano)
-                const colors = ['#FDE047', '#F97316', '#EC4899', '#06B6D4'];
+                const colors = ['#FDE047', '#F97316', '#EC4899', '#06B6D4', '#22C55E'];
                 this.color = colors[Math.floor(Math.random() * colors.length)];
             }
-            
             update() {
                 this.x += this.vx;
                 this.vy += this.gravity;
@@ -428,7 +495,6 @@
                 this.rotation += this.rotationSpeed;
                 this.life -= this.decay;
             }
-            
             draw(ctx) {
                 if (this.life <= 0) return;
                 ctx.save();
@@ -436,8 +502,6 @@
                 ctx.rotate((this.rotation * Math.PI) / 180);
                 ctx.globalAlpha = this.life;
                 ctx.fillStyle = this.color;
-                
-                // Desenhar Estrela de 5 pontas
                 ctx.beginPath();
                 for (let i = 0; i < 5; i++) {
                     ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * this.size,
@@ -453,27 +517,22 @@
 
         function startParticles() {
             particles = [];
-            // Explosão no centro da tela
             const cx = window.innerWidth / 2;
             const cy = window.innerHeight / 2;
-            for (let i = 0; i < 60; i++) {
+            for (let i = 0; i < 50; i++) {
                 particles.push(new StarParticle(cx, cy));
             }
-            if (!animationFrameId) {
-                animateParticles();
-            }
+            if (!animationFrameId) animateParticles();
         }
 
         function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             let alive = false;
-            
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw(ctx);
                 if (particles[i].life > 0) alive = true;
             }
-            
             if (alive) {
                 animationFrameId = requestAnimationFrame(animateParticles);
             } else {
@@ -490,9 +549,7 @@
             particles = [];
         }
 
-        // 8. START
         window.onload = initGame;
-
     </script>
 </body>
 </html>
