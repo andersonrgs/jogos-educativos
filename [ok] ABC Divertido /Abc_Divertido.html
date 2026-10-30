@@ -79,11 +79,16 @@
 
     <!-- Barra de navegação superior (Voltar ao Menu + Falar palavra) -->
     <header class="w-full max-w-4xl px-4 pt-3 flex justify-between items-center z-20">
-        <a href="index.html" class="px-4 py-2 bg-white/90 hover:bg-white text-gray-700 text-lg rounded-2xl shadow-md border-2 border-gray-200 flex items-center gap-1">
+        <a href="index.html" class="px-4 py-2 bg-white/90 hover:bg-white text-gray-700 text-lg rounded-2xl shadow-md border-2 border-gray-200 flex items-center gap-1 active:scale-95">
             🏠 <span>Menu</span>
         </a>
-        <div class="text-sm sm:text-base font-bold bg-white/80 px-4 py-1.5 rounded-full text-indigo-700 shadow-sm" id="progress-info">
-            Palavra 1 de 31
+        <div class="flex flex-col items-center">
+            <span id="level-badge" class="text-xs bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full font-bold shadow-sm">
+                Fase: 3 Letras
+            </span>
+            <span class="text-sm sm:text-base font-bold text-indigo-700" id="progress-info">
+                Palavra 1 de 31
+            </span>
         </div>
         <button id="speaker-btn" title="Ouvir palavra" class="px-3 py-2 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-xl rounded-2xl shadow-md flex items-center gap-1 active:scale-95">
             🔊
@@ -124,48 +129,55 @@
 
     <script>
         /**
-         * Lógica do Jogo Encaixe das Letrinhas Educativo
+         * Lógica do Jogo Encaixe das Letrinhas Educativo com Progressão Gradual
          */
 
-        // 1. BANCO DE PALAVRAS EXPANDIDO (Com as originais + novas palavras lúdicas infantis)
-        const allWords = [
-            // Palavras originais
-            { word: "BOI", emoji: "🐂" },
-            { word: "CÃO", emoji: "🐕" },
-            { word: "UVA", emoji: "🍇" },
-            { word: "GATO", emoji: "🐈" },
-            { word: "SAPO", emoji: "🐸" },
-            { word: "BOLA", emoji: "⚽" },
-            { word: "PORCO", emoji: "🐖" },
-            { word: "PEIXE", emoji: "🐟" },
-            { word: "CAVALO", emoji: "🐎" },
-            { word: "FORMIGA", emoji: "🐜" },
-            { word: "CACHORRO", emoji: "🐶" },
+        // 1. BANCO DE PALAVRAS ORGANIZADO POR TAMANHO (3, 4, 5, 6, 7+ letras)
+        const wordsByLength = {
+            3: [
+                { word: "BOI", emoji: "🐂" },
+                { word: "CÃO", emoji: "🐕" },
+                { word: "UVA", emoji: "🍇" },
+                { word: "SOL", emoji: "☀️" },
+                { word: "LUA", emoji: "🌙" }
+            ],
+            4: [
+                { word: "GATO", emoji: "🐈" },
+                { word: "SAPO", emoji: "🐸" },
+                { word: "BOLA", emoji: "⚽" },
+                { word: "PATO", emoji: "🦆" },
+                { word: "LEÃO", emoji: "🦁" },
+                { word: "MAÇÃ", emoji: "🍎" },
+                { word: "BOLO", emoji: "🎂" },
+                { word: "PIPA", emoji: "🪁" },
+                { word: "CASA", emoji: "🏠" },
+                { word: "TREM", emoji: "🚂" },
+                { word: "FLOR", emoji: "🌸" }
+            ],
+            5: [
+                { word: "PORCO", emoji: "🐖" },
+                { word: "PEIXE", emoji: "🐟" },
+                { word: "CARRO", emoji: "🚗" }
+            ],
+            6: [
+                { word: "CAVALO", emoji: "🐎" },
+                { word: "MACACO", emoji: "🐒" },
+                { word: "BANANA", emoji: "🍌" },
+                { word: "PIPOCA", emoji: "🍿" }
+            ],
+            7: [ // 7 letras ou mais (Desafio avançado)
+                { word: "FORMIGA", emoji: "🐜" },
+                { word: "CACHORRO", emoji: "🐶" },
+                { word: "GIRAFA", emoji: "🦒" },
+                { word: "ELEFANTE", emoji: "🐘" },
+                { word: "BORBOLETA", emoji: "🦋" },
+                { word: "CORAÇÃO", emoji: "❤️" },
+                { word: "TARTARUGA", emoji: "🐢" },
+                { word: "MELANCIA", emoji: "🍉" }
+            ]
+        };
 
-            // Novas palavras educativas adicionadas (comidas, animais, brinquedos, natureza)
-            { word: "SOL", emoji: "☀️" },
-            { word: "LUA", emoji: "🌙" },
-            { word: "PATO", emoji: "🦆" },
-            { word: "LEÃO", emoji: "🦁" },
-            { word: "MAÇÃ", emoji: "🍎" },
-            { word: "BOLO", emoji: "🎂" },
-            { word: "PIPA", emoji: "🪁" },
-            { word: "CASA", emoji: "🏠" },
-            { word: "MACACO", emoji: "🐒" },
-            { word: "BANANA", emoji: "🍌" },
-            { word: "PIPOCA", emoji: "🍿" },
-            { word: "TARTARUGA", emoji: "🐢" },
-            { word: "ELEFANTE", emoji: "🐘" },
-            { word: "GIRAFA", emoji: "🦒" },
-            { word: "BORBOLETA", emoji: "🦋" },
-            { word: "CORAÇÃO", emoji: "❤️" },
-            { word: "TREM", emoji: "🚂" },
-            { word: "CARRO", emoji: "🚗" },
-            { word: "FLOR", emoji: "🌸" },
-            { word: "MELANCIA", emoji: "🍉" }
-        ];
-
-        // 2. EMBARALHAMENTO RANDÔMICO DAS PALAVRAS
+        // Algoritmo de Fisher-Yates para embaralhamento
         function shuffleArray(array) {
             const arr = [...array];
             for (let i = arr.length - 1; i > 0; i--) {
@@ -175,23 +187,37 @@
             return arr;
         }
 
-        let wordsList = shuffleArray(allWords);
+        // Constrói a lista progressiva:
+        // Primeiro todas de 3 letras (sorteadas entre si), depois 4, depois 5, 6, 7+
+        function buildGradualWordsList() {
+            const lengths = [3, 4, 5, 6, 7];
+            let fullList = [];
+            lengths.forEach(len => {
+                if (wordsByLength[len]) {
+                    fullList = fullList.concat(shuffleArray(wordsByLength[len]));
+                }
+            });
+            return fullList;
+        }
+
+        let wordsList = buildGradualWordsList();
         let currentWordIndex = 0;
         let currentWord = "";
         let selectedLetterBtn = null;
         let correctlyPlacedCount = 0;
         let audioCtx = null;
 
-        // 3. ELEMENTOS DO DOM
+        // 2. ELEMENTOS DO DOM
         const emojiDisplay = document.getElementById('emoji-display');
         const emojiWrapper = document.getElementById('emoji-wrapper');
         const slotsContainer = document.getElementById('slots-container');
         const lettersContainer = document.getElementById('letters-container');
         const nextBtn = document.getElementById('next-btn');
         const progressInfo = document.getElementById('progress-info');
+        const levelBadge = document.getElementById('level-badge');
         const speakerBtn = document.getElementById('speaker-btn');
 
-        // Pronúncias amigáveis para caracteres especiais/acentuados em português
+        // Pronúncias didáticas amigáveis em português
         const phoneticLetters = {
             'A': 'A', 'Á': 'A', 'Ã': 'Ã', 'Â': 'A',
             'B': 'Bê', 'C': 'Cê', 'Ç': 'Cê-cedilha', 'D': 'Dê',
@@ -204,14 +230,15 @@
             'W': 'Dáblio', 'X': 'Xis', 'Y': 'Ípsilon', 'Z': 'Zê'
         };
 
-        // 4. INICIALIZAÇÃO
+        // 3. INICIALIZAÇÃO
         function initGame() {
             loadWord(currentWordIndex);
 
             nextBtn.addEventListener('click', () => {
                 currentWordIndex++;
                 if (currentWordIndex >= wordsList.length) {
-                    wordsList = shuffleArray(allWords);
+                    // Ao terminar todas, reconstrói com nova ordem aleatória por nível
+                    wordsList = buildGradualWordsList();
                     currentWordIndex = 0;
                 }
                 loadWord(currentWordIndex);
@@ -241,6 +268,9 @@
             const levelData = wordsList[index];
             currentWord = levelData.word;
             emojiDisplay.textContent = levelData.emoji;
+
+            const letterCount = currentWord.length;
+            levelBadge.textContent = `Fase: ${letterCount} Letras`;
             progressInfo.textContent = `Palavra ${index + 1} de ${wordsList.length}`;
 
             const charsArray = Array.from(currentWord);
@@ -250,7 +280,7 @@
                 const slot = document.createElement('div');
                 const isSmall = charsArray.length > 6;
                 const sizeClass = isSmall 
-                    ? 'w-12 h-16 sm:w-16 sm:h-20 text-3xl sm:text-4xl' 
+                    ? 'w-11 h-16 sm:w-16 sm:h-20 text-3xl sm:text-4xl' 
                     : 'w-14 h-18 sm:w-20 sm:h-24 text-4xl sm:text-5xl';
 
                 slot.className = `slot ${sizeClass} flex items-center justify-center rounded-2xl
@@ -276,7 +306,7 @@
 
                 const isSmall = charsArray.length > 6;
                 const sizeClass = isSmall 
-                    ? 'w-12 h-14 sm:w-16 sm:h-18 text-3xl sm:text-4xl' 
+                    ? 'w-11 h-14 sm:w-16 sm:h-18 text-3xl sm:text-4xl' 
                     : 'w-14 h-16 sm:w-20 sm:h-20 text-4xl sm:text-5xl';
 
                 btn.className = `letter-btn btn-depth ${sizeClass} flex items-center justify-center rounded-2xl cursor-pointer border-b-8 ${colorClasses} font-black`;
@@ -288,17 +318,18 @@
                 lettersContainer.appendChild(btn);
             });
 
+            // Pronuncia a palavra ao iniciar a fase
             setTimeout(() => {
                 speakText(currentWord);
             }, 300);
         }
 
-        // 5. INTERAÇÕES E PRONÚNCIA
+        // 4. INTERAÇÕES E PRONÚNCIA
         function handleLetterSelect(btn) {
             if (btn.style.visibility === 'hidden') return;
 
             playSound('tick');
-            speakLetter(btn.dataset.char);
+            speakLetter(btn.dataset.char); // Pronuncia a letra clicada imediatamente
 
             if (selectedLetterBtn) {
                 selectedLetterBtn.classList.remove('selected-letter');
@@ -367,7 +398,7 @@
             startParticles();
         }
 
-        // 6. SÍNTESE DE VOZ EDUCATIVA (Text-To-Speech nativo)
+        // 5. SÍNTESE DE VOZ DIDÁTICA (Text-To-Speech nativo)
         function speakLetter(char) {
             const letterSound = phoneticLetters[char.toUpperCase()] || char;
             speakText(letterSound, 0.9, 1.25);
@@ -395,7 +426,7 @@
             };
         }
 
-        // 7. SISTEMA DE EFEITOS SONOROS (Web Audio API)
+        // 6. SONS SINTÉTICOS (Web Audio API)
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -458,7 +489,7 @@
             }
         }
 
-        // 8. EFEITO DE ESTRELAS (Canvas Particle System)
+        // 7. SISTEMA DE ESTRELAS (Canvas)
         const canvas = document.getElementById('victory-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
