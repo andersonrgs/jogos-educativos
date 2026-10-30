@@ -67,11 +67,11 @@
     overflow-y: auto;
   }
 
-  /* Silhuetas espalhadas (usando variável css --rot para rotação aleatória) */
+  /* Silhuetas espalhadas - Bem nítidas e escuras para a criança enxergar com clareza */
   .target {
     font-size: clamp(65px, 12vh, 130px);
     line-height: 1;
-    filter: brightness(0) opacity(0.12);
+    filter: brightness(0) opacity(0.55) drop-shadow(0px 2px 4px rgba(0,0,0,0.25));
     cursor: pointer;
     position: relative;
     /* Começa invisível para animação de entrada */
@@ -100,7 +100,7 @@
 
   .shake {
     animation: errorShake 0.4s ease-in-out;
-    filter: brightness(0) opacity(0.12) drop-shadow(0 0 15px red);
+    filter: brightness(0) opacity(0.55) drop-shadow(0 0 15px red);
   }
   @keyframes errorShake {
     0%, 100% { transform: translateX(0) scale(1) rotate(var(--rot)); }
@@ -221,7 +221,13 @@
 </head>
 <body>
 
-<h1 id="title">Carregando...</h1>
+<header style="width: 100%; max-width: 900px; padding: 12px 16px 0; display: flex; justify-content: space-between; align-items: center; z-index: 20;">
+  <a href="index.html" style="text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.9); color: #5d4037; font-weight: bold; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 2px solid #ffcc80; font-size: 16px;">
+    🏠 Menu
+  </a>
+  <h1 id="title" style="margin: 0; font-size: clamp(20px, 4vh, 32px);">Carregando...</h1>
+  <div style="width: 70px;"></div>
+</header>
 
 <div id="game-container">
   <div id="targets-area"></div>
