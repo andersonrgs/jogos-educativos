@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Quebra-Gelo do Pinguim</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{height:100%}
+  body{margin:0;height:100dvh;font-family:system-ui,sans-serif;color:#fff;display:flex;flex-direction:column;align-items:center;padding:6px;gap:4px;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 30%,#e9f8ff 0%,#a9dcf5 45%,#5aa5d6 100%)}
+  h1{margin:0;font-size:clamp(16px,3.2vh,28px);color:#0b3a66;text-shadow:0 2px 0 #fff;flex:none}
+  #players{display:flex;gap:8px;width:100%;max-width:560px;flex:none}
+  .p{flex:1;padding:5px;border-radius:12px;background:#ffffff77;text-align:center;font-weight:800;color:#0b3a66;border:3px solid transparent;transition:.3s;font-size:clamp(13px,2.4vh,18px)}
+  .p.active{background:#fff;border-color:#ff9800;box-shadow:0 0 14px #ff9800aa;transform:scale(1.04)}
+  #msg{flex:none;min-height:2.4em;display:flex;align-items:center;text-align:center;font-size:clamp(13px,2.4vh,18px);font-weight:700;color:#0b3a66;line-height:1.2}
+  #main{flex:1;min-height:0;width:100%;max-width:1200px;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center}
+  #bw{flex:1 1 0;min-height:0;min-width:0;width:100%;position:relative}
+  #board{position:absolute;inset:0;width:100%;height:100%;overflow:visible;touch-action:manipulation;filter:drop-shadow(0 10px 8px #0b3a6666)}
+  @media (min-aspect-ratio:1/1){#main{flex-direction:row;gap:20px}#bw{height:100%;width:auto;flex:0 1 auto;aspect-ratio:412/395}#side{flex:0 0 auto}}
+  #board{width:min(100%,560px);height:auto;touch-action:manipulation;filter:drop-shadow(0 18px 14px #0b3a6666)}
+  .tile{cursor:pointer;transform-box:fill-box;transform-origin:center}
+  .tile:hover .top{filter:brightness(1.18)}
+  .tile.off{pointer-events:none}
+  .tile.gone{pointer-events:none;animation:breakaway .9s ease-in forwards}
+  @keyframes breakaway{
+    0%{transform:translateY(0) rotate(0)}
+    20%{transform:translateY(-22px) rotate(-5deg)}
+    100%{transform:translateY(260px) rotate(28deg);opacity:0}}
+  #peng{transition:transform 1.2s cubic-bezier(.5,0,1,.6),opacity 1.2s}
+  #peng.shake{animation:shake .25s 3}
+  @keyframes shake{0%,100%{transform:translate(0,-10px)}25%{transform:translate(-4px,-10px) rotate(-8deg)}75%{transform:translate(4px,-10px) rotate(8deg)}}
+  #peng.fall{transform:translate(0,410px) rotate(380deg);opacity:0}
+  .hammer{pointer-events:none}
+  .hammer .sw{animation:swing .5s ease-in-out forwards}
+  @keyframes swing{
+    0%{transform:translate(30px,-60px) rotate(35deg);opacity:0}
+    15%{opacity:1}
+    45%{transform:translate(0,0) rotate(0)}
+    60%{transform:translate(0,0) rotate(0)}
+    100%{transform:translate(30px,-60px) rotate(35deg);opacity:0}}
+  #side{display:flex;flex-direction:column;align-items:center;gap:8px;flex:none}
+  @media (max-aspect-ratio:1/1){#side{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px}#side #info{align-items:center}}
+  #info{display:flex;flex-direction:column;gap:6px;align-items:center}
+  #wheelWrap{width:clamp(110px,min(26vh,40vw),260px);height:clamp(110px,min(26vh,40vw),260px);filter:drop-shadow(0 8px 6px #0b3a6666);flex:none}
+  @media (min-aspect-ratio:1/1){#wheelWrap{width:clamp(130px,min(42vh,24vw),300px);height:clamp(130px,min(42vh,24vw),300px)}}
+  #arm{transition:transform 3.2s cubic-bezier(.12,.65,.1,1)}
+  button{font-size:clamp(15px,2.6vh,19px);font-weight:800;padding:10px 22px;border:0;border-radius:30px;color:#fff;cursor:pointer;
+    background:linear-gradient(#ffb341,#f57c00);box-shadow:0 5px #a64f00,0 8px 10px #0003}
+  button:active{transform:translateY(3px);box-shadow:0 2px #a64f00}
+  button:disabled{background:#9aa;box-shadow:0 5px #667;cursor:default}
+  #left{font-size:clamp(15px,2.6vh,20px);font-weight:800;color:#0b3a66;min-height:1.2em}
+  #restart{font-size:14px;padding:8px 18px;background:linear-gradient(#5aa0ee,#2d6fc6);box-shadow:0 4px #1a4688}
+</style>
+</head>
+<body>
+<h1>🐧 Quebra-Gelo do Pinguim</h1>
+<div id="players"><div class="p" id="p0">Jogador 1</div><div class="p" id="p1">Jogador 2</div></div>
+<div id="msg"></div>
+<div id="main">
+  <div id="bw"><svg id="board" viewBox="-206 -190 412 395" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div id="side">
+    <svg id="wheelWrap" viewBox="-105 -105 210 210"></svg>
+    <div id="info"><button id="spin">Girar roleta</button>
+    <div id="left"></div>
+    <button id="restart">Reiniciar</button></div>
+  </div>
+</div>
+<script>
+const S=26, R=3, NS='http://www.w3.org/2000/svg', DEPTH=9;
+const $=id=>document.getElementById(id);
+const board=$('board'), wheel=$('wheelWrap'), msg=$('msg'), spinBtn=$('spin'), leftEl=$('left');
+const colors=['#e53935','#fdd835','#43a047','#1e88e5','#8e24aa','#fb8c00'];
+let removed=new Set(), cur=0, remaining=0, over=false, rot=0, spinning=false, trapKey=null, peng, busy=false;
+
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+/* ---------- Som (WebAudio) ---------- */
+let ac,master;
+function audio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=1.6;master.connect(ac.destination)}catch(e){}}if(ac&&ac.state==='suspended')ac.resume();return ac}
+function noise(dur,freq,vol){
+  const a=audio();if(!a)return;
+  const buf=a.createBuffer(1,a.sampleRate*dur,a.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+  const s=a.createBufferSource();s.buffer=buf;
+  const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;
+  const g=a.createGain();g.gain.value=vol;
+  s.connect(f);f.connect(g);g.connect(master);s.start();
+}
+function tone(f0,f1,dur,vol,type='sine',delay=0){
+  const a=audio();if(!a)return;const t=a.currentTime+delay;
+  const o=a.createOscillator(),g=a.createGain();o.type=type;
+  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g);g.connect(master);o.start(t);o.stop(t+dur);
+}
+const sfx={
+  tick:()=>tone(1100,600,.05,.3,'square'),
+  hit:()=>{tone(180,60,.12,.6,'square');noise(.08,300,1.5);setTimeout(()=>{noise(.3,2500,1);noise(.2,5000,.6);tone(2200,900,.15,.15,'triangle')},70)},
+  fall:()=>{tone(1400,150,1.3,.4,'sine');tone(1000,100,1.3,.2,'sawtooth');setTimeout(()=>{noise(.6,120,2);tone(90,30,.5,.8,'sine')},1150)},
+  win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,f,.25,.2,'triangle',i*.15)),
+  ready:()=>tone(600,900,.12,.15,'triangle')
+};
+
+/* ---------- Roleta ---------- */
+(function(){
+  el('circle',{r:104,fill:'#1c1c22'},wheel);
+  el('circle',{r:100,fill:'#333',stroke:'#555','stroke-width':2},wheel);
+  for(let i=0;i<6;i++){
+    const a0=(i*60-90)*Math.PI/180,a1=((i+1)*60-90)*Math.PI/180;
+    el('path',{d:`M0 0 L${94*Math.cos(a0)} ${94*Math.sin(a0)} A94 94 0 0 1 ${94*Math.cos(a1)} ${94*Math.sin(a1)}Z`,fill:colors[i],stroke:'#fff','stroke-width':2},wheel);
+    const am=(i*60+30-90)*Math.PI/180;
+    const t=el('text',{x:60*Math.cos(am),y:60*Math.sin(am)+11,'text-anchor':'middle','font-size':32,'font-weight':900,fill:'#fff',stroke:'#0004','stroke-width':1},wheel);
+    t.textContent=i+1;
+  }
+  el('circle',{r:94,fill:'url(#gloss)'},wheel);
+  const arm=el('g',{id:'arm'},wheel);
+  el('path',{d:'M-9 8 L-4 -62 L-12 -62 L0 -88 L12 -62 L4 -62 L9 8 Z',fill:'#17171b',stroke:'#000','stroke-width':1.5},arm);
+  el('path',{d:'M0 -80 L0 -10',stroke:'#fff3','stroke-width':2},arm);
+  el('circle',{r:13,fill:'#111',stroke:'#444','stroke-width':2},wheel);
+  el('circle',{r:4,fill:'#777'},wheel);
+  const defs=el('defs',{},wheel);
+  const g=el('radialGradient',{id:'gloss',cx:'35%',cy:'30%',r:'80%'},defs);
+  el('stop',{offset:0,'stop-color':'#fff','stop-opacity':.35},g);
+  el('stop',{offset:.6,'stop-color':'#fff','stop-opacity':0},g);
+})();
+
+/* ---------- Tabuleiro ---------- */
+function hexPts(x,y,r){
+  const p=[];for(let i=0;i<6;i++){const a=(60*i-30)*Math.PI/180;p.push((x+r*Math.cos(a)).toFixed(1)+','+(y+r*Math.sin(a)).toFixed(1))}return p.join(' ');
+}
+function defsBoard(){
+  const d=el('defs',{},board);
+  const grad=(id,c1,c2)=>{const g=el('linearGradient',{id,x1:0,y1:0,x2:.4,y2:1},d);el('stop',{offset:0,'stop-color':c1},g);el('stop',{offset:1,'stop-color':c2},g)};
+  grad('gBlue','#7f9bff','#3553d3');
+  grad('gWhite','#ffffff','#c9defa');
+  grad('gFrame','#46d0ff','#1496d6');
+  const rp=el('radialGradient',{id:'gpeng',cx:'35%',cy:'30%',r:'80%'},d);
+  el('stop',{offset:0,'stop-color':'#555'},rp);el('stop',{offset:1,'stop-color':'#050505'},rp);
+}
+function build(){
+  board.innerHTML='';defsBoard();
+  const FR=196, FY=-10; // moldura
+  // sombra
+  el('ellipse',{cx:0,cy:196,rx:190,ry:16,fill:'#0b3a6633'},board);
+  // borda do tabuleiro (lateral + topo)
+  const pf=(r,dy)=>{const p=[];for(let i=0;i<6;i++){const a=(60*i)*Math.PI/180;p.push((r*Math.cos(a)).toFixed(1)+','+(r*Math.sin(a)+dy).toFixed(1))}return p.join(' ')};
+  el('polygon',{points:pf(FR,FY+34),fill:'#0d6ea0'},board);
+  el('polygon',{points:pf(FR,FY+20),fill:'#0f84bd'},board);
+  el('polygon',{points:pf(FR,FY),fill:'url(#gFrame)',stroke:'#7ae0ff','stroke-width':3},board);
+  el('polygon',{points:pf(FR-14,FY),fill:'#0b2a66',stroke:'#0a5a8a','stroke-width':3},board);
+  const tiles=[];
+  for(let q=-R;q<=R;q++)for(let r=-R;r<=R;r++){
+    if(Math.abs(q+r)>R)continue;
+    tiles.push([q,r]);
+  }
+  const cand=tiles.filter(([q,r])=>!(q===0&&r===0));
+  trapKey=cand[Math.floor(Math.random()*cand.length)].join(',');
+  // linhas de cima para baixo para sobreposição correta
+  tiles.sort((a,b)=>a[1]-b[1]);
+  for(const [q,r] of tiles){
+    const x=S*Math.sqrt(3)*(q+r/2), y=S*1.5*r+FY;
+    const white=Math.random()<.22;
+    const g=el('g',{class:'tile'},board);
+    el('polygon',{points:hexPts(x,y+DEPTH,S-1.5),fill:white?'#9cb8de':'#1f36a0'},g);
+    const top=el('polygon',{points:hexPts(x,y,S-1.5),fill:white?'url(#gWhite)':'url(#gBlue)',stroke:white?'#a8c5ee':'#2a43b8','stroke-width':1.5,class:'top'},g);
+    el('polygon',{points:hexPts(x,y,S-8),fill:'none',stroke:white?'#ffffffaa':'#ffffff44','stroke-width':1.5},g);
+    el('circle',{cx:x,cy:y,r:2.2,fill:white?'#b7cdea':'#2a3fa5'},g);
+    el('path',{d:`M${x-S*.7} ${y-S*.42} L${x} ${y-S*.85}`,stroke:'#fff8','stroke-width':2,'stroke-linecap':'round'},g);
+    g._pos=[x,y];
+    if(q===0&&r===0){g.classList.add('off');board._center=g}
+    else g.addEventListener('click',()=>pick(g,q+','+r));
+  }
+  buildPenguin(FY);
+  // martelo
+  const h=el('g',{class:'hammer',id:'hammer',style:'display:none'},board);
+  const sw=el('g',{class:'sw'},h);
+  el('rect',{x:-9,y:-150,width:18,height:140,rx:3,fill:'#1d1d22'},sw);
+  el('rect',{x:-48,y:-24,width:96,height:22,rx:6,fill:'#26262d',stroke:'#000'},sw);
+  el('rect',{x:-44,y:-22,width:88,height:5,rx:2,fill:'#6a6a78'},sw);
+}
+function buildPenguin(FY){
+  const pg=el('g',{id:'peng',transform:`translate(0 ${FY})`},board);
+  peng=pg;
+  const inner=el('g',{transform:'translate(0 -14)'},pg);
+  el('ellipse',{cx:0,cy:14,rx:22,ry:6,fill:'#0006'},inner);
+  el('ellipse',{cx:-9,cy:13,rx:9,ry:4.5,fill:'#ffa000'},inner);
+  el('ellipse',{cx:9,cy:13,rx:9,ry:4.5,fill:'#ffa000'},inner);
+  el('path',{d:'M-22 -6 Q-30 10 -18 12 Q-14 4 -16 -4Z',fill:'#111'},inner);
+  el('path',{d:'M22 -6 Q30 10 18 12 Q14 4 16 -4Z',fill:'#111'},inner);
+  el('ellipse',{cx:0,cy:-14,rx:22,ry:30,fill:'url(#gpeng)'},inner);
+  el('ellipse',{cx:0,cy:-8,rx:14,ry:22,fill:'#f4f7fb'},inner);
+  el('ellipse',{cx:-6,cy:-40,rx:6,ry:7,fill:'#fff'},inner);
+  el('ellipse',{cx:6,cy:-40,rx:6,ry:7,fill:'#fff'},inner);
+  el('circle',{cx:-5,cy:-39,r:2.6,fill:'#000'},inner);
+  el('circle',{cx:5,cy:-39,r:2.6,fill:'#000'},inner);
+  el('path',{d:'M-6 -33 Q0 -26 6 -33 Q0 -30 -6 -33Z',fill:'#ffa000'},inner);
+  el('ellipse',{cx:-8,cy:-30,rx:3,ry:5,fill:'#fff3',transform:'rotate(20 -8 -30)'},inner);
+}
+
+function pick(g,k){
+  if(over||remaining<=0||spinning||busy||g.classList.contains('gone'))return;
+  busy=true;
+  const [x,y]=g._pos;
+  const h=$('hammer');h.style.display='';
+  h.setAttribute('transform',`translate(${x} ${y-4})`);
+  const sw=h.firstChild;sw.style.animation='none';void sw.getBoundingClientRect();sw.style.animation='';
+  setTimeout(()=>{sfx.hit();g.classList.add('gone')},230);
+  setTimeout(()=>{h.style.display='none';busy=false;after(k)},520);
+}
+const NB=['1,0','-1,0','0,1','0,-1','1,-1','-1,1'];
+function after(k){
+  removed.add(k);
+  const unsupported=NB.every(n=>removed.has(n));
+  if(k===trapKey||unsupported){
+    over=true;remaining=0;ui();
+    board._center.classList.add('gone');
+    peng.classList.add('shake');
+    setTimeout(()=>{peng.classList.remove('shake');peng.classList.add('fall');sfx.fall()},650);
+    setTimeout(()=>{
+      msg.innerHTML=`💥 O pinguim ficou sem apoio e caiu! Jogador ${cur+1} perdeu.<br>🏆 Jogador ${2-cur} venceu!`;
+      sfx.win();ui();
+    },2000);
+    return;
+  }
+  remaining--;
+  if(remaining===0){cur=1-cur;msg.textContent=`Jogador ${cur+1}: gire a roleta!`;sfx.ready()}
+  ui();
+}
+
+function ui(){
+  for(let i=0;i<2;i++)$('p'+i).classList.toggle('active',i===cur&&!over);
+  spinBtn.disabled=over||spinning||remaining>0;
+  leftEl.textContent=remaining>0?`Quebre ${remaining} bloco${remaining>1?'s':''}`:'';
+}
+function start(){
+  over=false;cur=0;remaining=0;spinning=false;busy=false;removed=new Set();
+  build();msg.textContent='Jogador 1: gire a roleta!';ui();
+}
+
+spinBtn.onclick=()=>{
+  if(spinning||over||remaining>0)return;
+  audio();spinning=true;ui();
+  const n=1+Math.floor(Math.random()*6);
+  const center=(n-1)*60+30;
+  const base=((rot%360)+360)%360;
+  rot+=360*5+((center-base)+360)%360;
+  $('arm').style.transform=`rotate(${rot}deg)`;
+  msg.textContent='Girando...';
+  for(let i=1;i<=24;i++){const t=3200*(1-Math.pow(1-i/24,1.0/ .55));setTimeout(sfx.tick,Math.max(0,3200*Math.pow(i/24,.45)*.97))}
+  setTimeout(()=>{
+    spinning=false;remaining=n;
+    msg.textContent=`Jogador ${cur+1} tirou ${n}! Quebre ${n} bloco${n>1?'s':''} de gelo.`;
+    ui();
+  },3300);
+};
+
+$('restart').onclick=()=>{const a=$('arm');a.style.transition='none';rot=0;a.style.transform='rotate(0deg)';void a.getBoundingClientRect();a.style.transition='';start()};
+document.addEventListener('pointerdown',audio,{once:true});
+start();
+</script>
+</body>
+</html>

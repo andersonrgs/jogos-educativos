@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de Jogos Educativos</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Comic Sans MS","Trebuchet MS",sans-serif;background:linear-gradient(160deg,#a1e3ff,#ffe8a1 60%,#ffc4e1);min-height:100vh;color:#333}
+  header{text-align:center;padding:28px 12px 8px}
+  h1{margin:0;font-size:clamp(2rem,6vw,3.5rem);color:#ff5a5f;text-shadow:3px 3px 0 #fff}
+  header p{font-size:1.2rem;margin:8px 0 0}
+  .grid{max-width:1000px;margin:24px auto;padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
+  .card{background:#fff;border-radius:28px;padding:22px 16px;text-align:center;text-decoration:none;color:inherit;box-shadow:0 8px 0 rgba(0,0,0,.15);transition:transform .15s;position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;border:5px solid var(--c)}
+  .card:hover,.card:focus{transform:translateY(-6px) rotate(-1deg);outline:none}
+  .card:active{transform:translateY(2px)}
+  .emoji{font-size:4.5rem;line-height:1}
+  .card h2{margin:0;font-size:1.4rem;color:var(--c)}
+  .card small{font-size:1rem}
+  .tag{background:var(--c);color:#fff;border-radius:20px;padding:4px 12px;font-size:.85rem;font-weight:bold}
+  .soon{filter:grayscale(.9);opacity:.6;cursor:not-allowed;border-style:dashed}
+  .soon:hover{transform:none}
+  footer{text-align:center;padding-bottom:20px;font-size:.9rem;opacity:.7}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 Cantinho dos Jogos 🌈</h1>
+  <p>Escolha um jogo e vamos aprender brincando!</p>
+</header>
+
+<main class="grid" id="grid"></main>
+<footer>Para adicionar um jogo, inclua uma linha na lista <code>JOGOS</code> no index.html.</footer>
+
+<script>
+// ativo:false = jogo ainda em desenvolvimento (só existe a especificação .md)
+const JOGOS = [
+  {nome:"Letrinhas",      emoji:"🔤", skill:"Letras e palavras",       cor:"#ff5a5f", arquivo:"Abc_Divertido.html"},
+  {nome:"Números",        emoji:"🔢", skill:"Números e contagem",      cor:"#3b82f6", arquivo:"matematica_divertida.html"},
+  {nome:"Organiza Bagunça",emoji:"🧸", skill:"Organização e lógica",   cor:"#10b981", arquivo:"Organizar_Bagunca.html"},
+  {nome:"Quebra-Gelo do Pinguim",emoji:"🐧", skill:"Coordenação motora e raciocínio", cor:"#06b6d4", arquivo:"Pinguim.html"},
+  {nome:"Estoura Balão",  emoji:"🎈", skill:"Coordenação motora",      cor:"#f59e0b", ativo:false},
+  {nome:"Jogo da Memória",emoji:"🧠", skill:"Memória e cognição",      cor:"#8b5cf6", ativo:false},
+  {nome:"Rango Monstro",  emoji:"👾", skill:"Contagem e alimentação",  cor:"#ec4899", ativo:false},
+  {nome:"Sinfonia dos Animais",emoji:"🐮", skill:"Sons e animais",     cor:"#84cc16", ativo:false},
+];
+
+const grid = document.getElementById("grid");
+for (const j of JOGOS) {
+  const ativo = j.ativo !== false;
+  const a = document.createElement("a");
+  a.className = "card" + (ativo ? "" : " soon");
+  a.style.setProperty("--c", j.cor);
+  if (ativo) a.href = encodeURI(j.arquivo);
+  a.innerHTML = `<div class="emoji">${j.emoji}</div><h2>${j.nome}</h2><small>${j.skill}</small><span class="tag">${ativo ? "Jogar!" : "Em breve"}</span>`;
+  grid.appendChild(a);
+}
+</script>
+</body>
+</html>
