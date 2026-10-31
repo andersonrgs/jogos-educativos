@@ -17,6 +17,8 @@
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
+            height: 100dvh;
+            min-height: -webkit-fill-available;
         }
 
         /* Animação para o botão selecionado (Pulse) */
@@ -82,20 +84,20 @@
         .hidden-start { display: none !important; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col items-center justify-between relative">
+<body class="h-[100dvh] w-screen flex flex-col items-center justify-between relative overflow-hidden">
 
     <!-- Tela Inicial -->
     <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-emerald-100 z-50">
         <a href="index.html" class="absolute top-4 left-4 px-4 py-2 bg-white text-emerald-800 text-lg rounded-2xl shadow border-2 border-emerald-200 flex items-center gap-1 font-bold">
             🏠 <span>Menu</span>
         </a>
-        <h1 class="text-5xl md:text-6xl font-bold text-emerald-600 mb-8 text-center drop-shadow-md px-4">
+        <h1 class="text-4xl md:text-6xl font-bold text-emerald-600 mb-6 text-center drop-shadow-md px-4">
             Encaixe dos<br>Números 🔢
         </h1>
-        <button onclick="startGame()" class="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-3xl font-bold py-4 px-10 rounded-full shadow-xl transform transition hover:scale-105 active:scale-95 pop-in">
+        <button onclick="startGame()" class="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-2xl md:text-3xl font-bold py-3.5 px-8 md:py-4 md:px-10 rounded-full shadow-xl transform transition hover:scale-105 active:scale-95 pop-in">
             JOGAR!
         </button>
-        <p class="mt-8 text-emerald-700/80 font-medium text-lg text-center px-6">
+        <p class="mt-6 text-emerald-700/80 font-medium text-base md:text-lg text-center px-6">
             Aprenda a contar e fazer continhas ouvindo cada número!
         </p>
     </div>
@@ -104,37 +106,37 @@
     <div id="game-ui" class="w-full h-full max-w-4xl flex flex-col justify-between hidden-start">
         
         <!-- Cabeçalho (Botão Menu + Título + Progresso + Botão Ouvir) -->
-        <header class="w-full px-4 pt-3 flex justify-between items-center z-20">
-            <a href="index.html" class="px-4 py-2 bg-white hover:bg-gray-50 text-emerald-800 text-base md:text-lg rounded-2xl shadow-md border-2 border-emerald-200 flex items-center gap-1 font-bold active:scale-95">
+        <header class="w-full px-3 pt-2 md:pt-3 flex justify-between items-center z-20 flex-none">
+            <a href="index.html" class="px-3 py-1.5 bg-white hover:bg-gray-50 text-emerald-800 text-sm md:text-base rounded-2xl shadow-md border-2 border-emerald-200 flex items-center gap-1 font-bold active:scale-95">
                 🏠 <span>Menu</span>
             </a>
             <div class="flex flex-col items-center">
-                <h2 id="phase-title" class="text-xl md:text-2xl font-bold text-emerald-700">Fase 1: Reconhecer</h2>
-                <div class="flex justify-center gap-2 mt-1" id="progress-dots"></div>
+                <h2 id="phase-title" class="text-base md:text-xl font-bold text-emerald-700 text-center leading-tight">Fase 1: Conhecer os Números</h2>
+                <div class="flex justify-center gap-1.5 mt-1" id="progress-dots"></div>
             </div>
-            <button id="speak-op-btn" onclick="speakCurrentChallenge()" title="Ouvir a conta" class="px-3 py-2 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-xl rounded-2xl shadow-md flex items-center gap-1 active:scale-95 font-bold">
+            <button id="speak-op-btn" onclick="speakCurrentChallenge()" title="Ouvir a conta" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-lg rounded-2xl shadow-md flex items-center gap-1 active:scale-95 font-bold">
                 🔊
             </button>
         </header>
 
         <!-- Área do Desafio (Topo / Central) -->
-        <div class="flex-1 flex flex-col items-center justify-center p-3 min-h-[35vh]">
-            <div id="challenge-container" class="flex flex-wrap items-center justify-center gap-3 md:gap-5 text-6xl md:text-8xl">
+        <div class="flex-1 flex flex-col items-center justify-center p-2 min-h-0 overflow-hidden">
+            <div id="challenge-container" class="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-5xl md:text-7xl">
                 <!-- Emojis e Sinais injetados via JS -->
             </div>
         </div>
 
         <!-- Feedback de Sucesso (Estrelas / Parabéns) -->
         <div id="success-feedback" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0 transition-opacity duration-300 z-40 text-center">
-            <h3 id="feedback-text" class="text-5xl md:text-7xl font-black text-yellow-400 drop-shadow-[0_4px_6px_rgba(0,0,0,0.35)]">
+            <h3 id="feedback-text" class="text-4xl md:text-7xl font-black text-yellow-400 drop-shadow-[0_4px_6px_rgba(0,0,0,0.35)]">
                 MUITO BEM!
             </h3>
         </div>
 
-        <!-- Bandeja de Números (Rodapé) -->
-        <div class="flex-none bg-white/60 backdrop-blur-md rounded-t-3xl p-5 shadow-[0_-10px_20px_rgba(0,0,0,0.08)] border-t border-white/80">
-            <p class="text-center text-emerald-800 font-bold text-lg md:text-xl mb-3">Toque no número e encaixe:</p>
-            <div id="tray-container" class="flex justify-center items-center gap-3 md:gap-6 flex-wrap">
+        <!-- Bandeja de Números (Rodapé - Ajustada para nunca cortar no celular) -->
+        <div class="flex-none bg-white/70 backdrop-blur-md rounded-t-3xl px-3 py-3 md:py-5 shadow-[0_-10px_20px_rgba(0,0,0,0.08)] border-t border-white/80 pb-[max(12px,env(safe-area-inset-bottom))]">
+            <p class="text-center text-emerald-800 font-bold text-sm md:text-lg mb-2">Toque no número e encaixe:</p>
+            <div id="tray-container" class="flex justify-center items-center gap-2 sm:gap-4 md:gap-6 flex-nowrap w-full max-w-md mx-auto">
                 <!-- Botões de números injetados via JS -->
             </div>
         </div>
@@ -310,8 +312,8 @@
                 // Reconhecimento
                 expectedAnswer = Math.floor(Math.random() * 9) + 1;
                 challengeContainer.innerHTML = `
-                    <div id="target-box" class="w-32 h-44 border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
-                        <span class="text-8xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
+                    <div id="target-box" class="w-24 h-32 md:w-32 md:h-40 border-4 md:border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
+                        <span class="text-7xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
                     </div>
                 `;
             } 
@@ -320,9 +322,9 @@
                 expectedAnswer = Math.floor(Math.random() * 8) + 1;
                 challengeContainer.innerHTML = `
                     ${createEmojiGroup(expectedAnswer, currentEmoji)}
-                    <span class="math-symbol font-black mx-3 text-6xl md:text-8xl">=</span>
-                    <div id="target-box" class="w-32 h-44 border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
-                        <span class="text-8xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
+                    <span class="math-symbol font-black mx-2 text-5xl md:text-7xl">=</span>
+                    <div id="target-box" class="w-24 h-32 md:w-32 md:h-40 border-4 md:border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
+                        <span class="text-7xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
                     </div>
                 `;
             }
@@ -333,11 +335,11 @@
                 expectedAnswer = num1 + num2;
                 challengeContainer.innerHTML = `
                     ${createEmojiGroup(num1, currentEmoji)}
-                    <span class="math-symbol font-black mx-2 text-6xl md:text-7xl">+</span>
+                    <span class="math-symbol font-black mx-1.5 text-5xl md:text-7xl">+</span>
                     ${createEmojiGroup(num2, currentEmoji)}
-                    <span class="math-symbol font-black mx-2 text-6xl md:text-7xl">=</span>
-                    <div id="target-box" class="w-28 h-38 md:w-32 md:h-44 border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
-                        <span class="text-7xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
+                    <span class="math-symbol font-black mx-1.5 text-5xl md:text-7xl">=</span>
+                    <div id="target-box" class="w-22 h-28 sm:w-26 sm:h-34 md:w-32 md:h-40 border-4 md:border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
+                        <span class="text-6xl md:text-8xl font-black silhouette-target">${expectedAnswer}</span>
                     </div>
                 `;
             }
@@ -348,11 +350,11 @@
                 expectedAnswer = num1 - num2;
                 challengeContainer.innerHTML = `
                     ${createEmojiGroup(num1, currentEmoji)}
-                    <span class="math-symbol font-black mx-2 text-6xl md:text-7xl">-</span>
+                    <span class="math-symbol font-black mx-1.5 text-5xl md:text-7xl">-</span>
                     ${createEmojiGroup(num2, currentEmoji)}
-                    <span class="math-symbol font-black mx-2 text-6xl md:text-7xl">=</span>
-                    <div id="target-box" class="w-28 h-38 md:w-32 md:h-44 border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
-                        <span class="text-7xl md:text-9xl font-black silhouette-target">${expectedAnswer}</span>
+                    <span class="math-symbol font-black mx-1.5 text-5xl md:text-7xl">=</span>
+                    <div id="target-box" class="w-22 h-28 sm:w-26 sm:h-34 md:w-32 md:h-40 border-4 md:border-8 border-dashed border-gray-400 rounded-3xl bg-gray-200/50 flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-200/70 shadow-inner" onclick="handleTargetClick()">
+                        <span class="text-6xl md:text-8xl font-black silhouette-target">${expectedAnswer}</span>
                     </div>
                 `;
             }
@@ -378,7 +380,8 @@
                 const btn = document.createElement('button');
                 const colorClass = `color-${index % 5}`;
                 
-                btn.className = `${colorClass} w-20 h-20 md:w-24 md:h-24 rounded-3xl shadow-xl text-5xl md:text-6xl font-black flex items-center justify-center cursor-pointer transform transition-transform duration-200 pop-in border-4 border-transparent active:scale-95`;
+                // Botões proporcionais que cabem os 4 lado a lado no celular sem quebrar
+                btn.className = `${colorClass} w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl md:rounded-3xl shadow-lg md:shadow-xl text-3xl sm:text-4xl md:text-5xl font-black flex items-center justify-center cursor-pointer transform transition-transform duration-200 pop-in border-2 md:border-4 border-transparent active:scale-95 flex-none`;
                 btn.innerText = num;
                 btn.onclick = () => handleTrayClick(num, btn);
                 trayContainer.appendChild(btn);
@@ -427,8 +430,8 @@
                 isAnimating = true;
                 playSound('success');
                 
-                targetBox.innerHTML = `<span class="text-8xl md:text-9xl font-black text-white drop-shadow-md pop-in">${expectedAnswer}</span>`;
-                targetBox.className = "w-32 h-44 border-8 border-transparent rounded-3xl bg-green-500 flex items-center justify-center pop-in shadow-2xl";
+                targetBox.innerHTML = `<span class="text-7xl md:text-9xl font-black text-white drop-shadow-md pop-in">${expectedAnswer}</span>`;
+                targetBox.className = "w-24 h-32 md:w-32 md:h-40 border-4 md:border-8 border-transparent rounded-3xl bg-green-500 flex items-center justify-center pop-in shadow-2xl";
                 
                 selectedNumberEl.style.opacity = '0';
                 selectedNumberEl.style.transform = 'scale(0)';
