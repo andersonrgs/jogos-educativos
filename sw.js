@@ -3,6 +3,7 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './aventura_familia.html',
   './icon-192.png',
   './icon-512.png',
   './Abc_Divertido.html',

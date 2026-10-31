@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Aventura da Família</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: #5c94fc; /* Azul clássico céu de Mario */
+            min-height: 100dvh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Botões de controle na tela para celular/tablet */
+        .touch-btn {
+            background: rgba(255, 255, 255, 0.35);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 900;
+            transition: transform 0.08s, background 0.08s;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.65);
+        }
+
+        .jump-btn {
+            background: rgba(34, 197, 94, 0.7);
+            border-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .jump-btn:active, .jump-btn.pressed {
+            background: rgba(34, 197, 94, 0.95);
+        }
+
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="w-screen h-[100dvh] flex flex-col justify-between items-center relative overflow-hidden">
+
+    <!-- Canvas Principal do Jogo -->
+    <canvas id="gameCanvas" class="absolute inset-0 w-full h-full z-0 block"></canvas>
+
+    <!-- Tela de Seleção de Personagem -->
+    <div id="char-select-screen" class="absolute inset-0 z-40 bg-sky-400/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 text-center">
+        <a href="index.html" class="self-start px-4 py-2 bg-white text-sky-800 text-lg rounded-2xl shadow border-2 border-sky-300 flex items-center gap-1 font-bold">
+            🏠 <span>Menu</span>
+        </a>
+
+        <div class="my-auto max-w-xl w-full">
+            <h1 class="text-3xl sm:text-5xl font-black text-white drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)] mb-2">
+                Aventura da Família! 🍄⭐
+            </h1>
+            <p class="text-lg sm:text-2xl text-yellow-200 font-bold mb-6">
+                Quem vai jogar hoje? Escolha seu herói:
+            </p>
+
+            <!-- Cards dos Personagens da Família -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full">
+                <!-- 1. Henrique (Homem-Aranha) -->
+                <button onclick="selectCharacter('henrique')" class="char-card bg-white hover:bg-yellow-50 border-4 border-red-500 rounded-3xl p-3 flex flex-col items-center shadow-xl active:scale-95 transition-all">
+                    <div class="w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center">
+                        <canvas id="preview-henrique" width="80" height="96"></canvas>
+                    </div>
+                    <span class="text-base sm:text-xl font-black text-red-600 mt-2">Henrique</span>
+                    <span class="text-xs font-bold text-gray-500">🕷️ Homem-Aranha</span>
+                </button>
+
+                <!-- 2. Papai Anderson -->
+                <button onclick="selectCharacter('anderson')" class="char-card bg-white hover:bg-yellow-50 border-4 border-blue-500 rounded-3xl p-3 flex flex-col items-center shadow-xl active:scale-95 transition-all">
+                    <div class="w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center">
+                        <canvas id="preview-anderson" width="80" height="96"></canvas>
+                    </div>
+                    <span class="text-base sm:text-xl font-black text-blue-700 mt-2">Pai Anderson</span>
+                    <span class="text-xs font-bold text-gray-500">🧔 Barba & Grisalho</span>
+                </button>
+
+                <!-- 3. Mamãe -->
+                <button onclick="selectCharacter('mamae')" class="char-card bg-white hover:bg-yellow-50 border-4 border-pink-400 rounded-3xl p-3 flex flex-col items-center shadow-xl active:scale-95 transition-all">
+                    <div class="w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center">
+                        <canvas id="preview-mamae" width="80" height="96"></canvas>
+                    </div>
+                    <span class="text-base sm:text-xl font-black text-pink-600 mt-2">Mamãe</span>
+                    <span class="text-xs font-bold text-gray-500">👓 Blusa Rosa & Jeans</span>
+                </button>
+
+                <!-- 4. Vovó -->
+                <button onclick="selectCharacter('vovo')" class="char-card bg-white hover:bg-yellow-50 border-4 border-purple-400 rounded-3xl p-3 flex flex-col items-center shadow-xl active:scale-95 transition-all">
+                    <div class="w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center">
+                        <canvas id="preview-vovo" width="80" height="96"></canvas>
+                    </div>
+                    <span class="text-base sm:text-xl font-black text-purple-700 mt-2">Vovó</span>
+                    <span class="text-xs font-bold text-gray-500">👵 De Óculos & Amor</span>
+                </button>
+            </div>
+        </div>
+
+        <p class="text-xs sm:text-sm text-white/80 font-bold">
+            Pule nos blocos misteriosos com ? para achar estrelas e letrinhas! ⭐
+        </p>
+    </div>
+
+    <!-- Interface Superior HUD (Placar, Moedas e Vidas Infinitas) -->
+    <header class="w-full max-w-4xl px-3 pt-3 flex justify-between items-center z-20 flex-none pointer-events-auto">
+        <div class="flex items-center gap-2">
+            <a href="index.html" class="px-3.5 py-1.5 bg-white/90 hover:bg-white text-sky-800 text-sm sm:text-base rounded-2xl shadow-md border-2 border-sky-200 flex items-center gap-1 font-bold active:scale-95">
+                🏠 <span>Menu</span>
+            </a>
+            <button onclick="openCharSelect()" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-xs sm:text-sm rounded-2xl shadow font-black flex items-center gap-1 active:scale-95">
+                🔄 <span>Trocar</span>
+            </button>
+        </div>
+
+        <!-- Placar de Estrelas e Moedas -->
+        <div class="flex items-center gap-2 sm:gap-3 bg-black/40 backdrop-blur-sm px-3.5 py-1.5 rounded-2xl border border-white/40 text-white font-black text-sm sm:text-base">
+            <span class="flex items-center gap-1">⭐ <span id="stars-count" class="text-yellow-300">0</span></span>
+            <span class="flex items-center gap-1">🪙 <span id="coins-count" class="text-amber-300">0</span></span>
+            <span id="char-name-badge" class="text-xs bg-red-500 px-2 py-0.5 rounded-full ml-1">Henrique</span>
+        </div>
+    </header>
+
+    <!-- Controles Touch na Tela para Celular / Tablet -->
+    <div id="touch-controls" class="w-full max-w-4xl px-4 pb-4 flex justify-between items-end z-20 flex-none pointer-events-none pb-[max(16px,env(safe-area-inset-bottom))]">
+        <!-- Direcionais na Esquerda (Esquerda e Direita) -->
+        <div class="flex gap-3 pointer-events-auto">
+            <button id="btn-left" class="touch-btn w-16 h-16 sm:w-20 sm:h-20" aria-label="Esquerda">
+                ◀
+            </button>
+            <button id="btn-right" class="touch-btn w-16 h-16 sm:w-20 sm:h-20" aria-label="Direita">
+                ▶
+            </button>
+        </div>
+
+        <!-- Botão Pular na Direita -->
+        <div class="pointer-events-auto">
+            <button id="btn-jump" class="touch-btn jump-btn w-20 h-20 sm:w-24 sm:h-24 text-lg font-black tracking-wider" aria-label="Pular">
+                PULAR!
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay de Conclusão de Fase (Bandeira Final) -->
+    <div id="win-overlay" class="absolute inset-0 bg-black/75 backdrop-blur-sm hidden-screen flex flex-col items-center justify-center z-50 p-6 text-center">
+        <div class="text-8xl mb-3 animate-bounce">🏆🏰✨</div>
+        <h2 id="win-title" class="text-4xl sm:text-6xl font-black text-yellow-300 mb-2 drop-shadow-md">
+            MUITO BEM!
+        </h2>
+        <p id="win-desc" class="text-lg sm:text-2xl text-white font-bold mb-6">
+            Você chegou ao castelo da família!
+        </p>
+        <button onclick="restartLevel()" class="bg-green-500 hover:bg-green-400 text-white text-2xl sm:text-3xl font-black py-3.5 px-10 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95">
+            Jogar Novamente ▶
+        </button>
+    </div>
+
+    <script>
+        /**
+         * MOTOR DE JOGO DE PLATAFORMA EM CANVAS - ESTILO SUPER MARIO EDUCATIVO
+         */
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configurações e Áudio
+        let audioCtx = null;
+        let selectedHero = 'henrique';
+        let starsCollected = 0;
+        let coinsCollected = 0;
+        let gameRunning = false;
+
+        // Elementos DOM
+        const starsCountEl = document.getElementById('stars-count');
+        const coinsCountEl = document.getElementById('coins-count');
+        const charBadgeEl = document.getElementById('char-name-badge');
+        const selectScreen = document.getElementById('char-select-screen');
+        const winOverlay = document.getElementById('win-overlay');
+        const winTitleEl = document.getElementById('win-title');
+
+        // --- SISTEMA DE SÍNTESE DE VOZ EDUCATIVA ---
+        function speakText(text, rate = 0.9, pitch = 1.2) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // --- SISTEMA DE EFEITOS SONOROS RETRÔ (Web Audio API) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'jump') {
+                // Pulo boing clássico
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'coin') {
+                // Moeda plim-plim duplo
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, now); // Si5
+                osc.frequency.setValueAtTime(1318.51, now + 0.08); // Mi6
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'block') {
+                // Pancada no bloco
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'stomp') {
+                // Pular no monstrinho fofo
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.18);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            } else if (type === 'win') {
+                // Vitória triunfal estilo Mario
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'triangle';
+                    o.frequency.value = freq;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0.25, now + idx * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.35);
+                    o.start(now + idx * 0.1);
+                    o.stop(now + idx * 0.1 + 0.35);
+                });
+            }
+        }
+
+        // --- DESENHO DOS PERSONAGENS DA FAMÍLIA EM CANVAS ---
+        // Desenha Henrique (Homem-Aranha), Pai Anderson, Mãe e Vó com fidelidade à descrição!
+        function drawCharacterSprite(c, type, x, y, width, height, facingLeft = false, frame = 0) {
+            c.save();
+            c.translate(x + width/2, y + height);
+            if (facingLeft) c.scale(-1, 1);
+
+            // Balanço ao caminhar
+            const walkBounce = frame % 2 === 1 ? -2 : 0;
+            const legSwing = frame % 2 === 1 ? 6 : -6;
+
+            if (type === 'henrique') {
+                // --- 🕷️ HENRIQUE: Criança, fantasia de Homem-Aranha, cabelo curto ---
+                // Pernas / Botas azuis e vermelhas
+                c.fillStyle = '#dc2626'; // Vermelho Spidey
+                c.fillRect(-12 + legSwing/2, -18 + walkBounce, 10, 18);
+                c.fillRect(2 - legSwing/2, -18 + walkBounce, 10, 18);
+                c.fillStyle = '#1d4ed8'; // Azul
+                c.fillRect(-12 + legSwing/2, -18 + walkBounce, 10, 8);
+                c.fillRect(2 - legSwing/2, -18 + walkBounce, 10, 8);
+
+                // Tronco: Traje Homem-Aranha (Vermelho no peito com azul dos lados)
+                c.fillStyle = '#1d4ed8'; // Azul
+                c.fillRect(-14, -38 + walkBounce, 28, 20);
+                c.fillStyle = '#dc2626'; // Vermelho central
+                c.fillRect(-9, -38 + walkBounce, 18, 20);
+                // Aranha no peito
+                c.fillStyle = '#0f172a';
+                c.beginPath();
+                c.arc(0, -28 + walkBounce, 3.5, 0, Math.PI*2);
+                c.fill();
+
+                // Cabeça: Pele parda e Cabelinho curto castanho
+                c.fillStyle = '#d49b72'; // Tom pele parda
+                c.beginPath();
+                c.arc(0, -48 + walkBounce, 14, 0, Math.PI*2);
+                c.fill();
+
+                // Cabelo curto do Henrique
+                c.fillStyle = '#3e2723';
+                c.beginPath();
+                c.arc(0, -52 + walkBounce, 15, Math.PI, Math.PI*2);
+                c.fill();
+                // Franjinha curta
+                c.fillRect(-12, -54 + walkBounce, 24, 7);
+
+                // Olhos expressivos e sorrisinho alegre
+                c.fillStyle = '#1e293b';
+                c.beginPath();
+                c.arc(4, -48 + walkBounce, 2.5, 0, Math.PI*2);
+                c.fill();
+                c.fillStyle = '#ffffff';
+                c.beginPath();
+                c.arc(5, -49 + walkBounce, 1, 0, Math.PI*2);
+                c.fill();
+
+                // Sorriso
+                c.strokeStyle = '#991b1b';
+                c.lineWidth = 2;
+                c.beginPath();
+                c.arc(3, -44 + walkBounce, 4, 0.1, Math.PI*0.9);
+                c.stroke();
+
+                // Máscara / detalhes Homem-Aranha no peito / ombros
+                c.fillStyle = '#dc2626';
+                c.fillRect(10, -36 + walkBounce, 7, 12); // Bracinho
+            }
+            else if (type === 'anderson') {
+                // --- 🧔 PAI ANDERSON: Gordinho, barba, cabelo curto grisalho leve, pele parda ---
+                // Pernas / Calça
+                c.fillStyle = '#1e3a8a'; // Calça jeans escuro
+                c.fillRect(-16 + legSwing/2, -22 + walkBounce, 14, 22);
+                c.fillRect(2 - legSwing/2, -22 + walkBounce, 14, 22);
+                // Tênis
+                c.fillStyle = '#ffffff';
+                c.fillRect(-16 + legSwing/2, -6 + walkBounce, 15, 6);
+                c.fillRect(2 - legSwing/2, -6 + walkBounce, 15, 6);
+
+                // Tronco: Camiseta confortável, formato gordinho fofo
+                c.fillStyle = '#0284c7'; // Azul
+                c.beginPath();
+                c.ellipse(0, -38 + walkBounce, 20, 18, 0, 0, Math.PI*2);
+                c.fill();
+
+                // Cabeça: Pele parda
+                c.fillStyle = '#c58b63';
+                c.beginPath();
+                c.arc(0, -62 + walkBounce, 16, 0, Math.PI*2);
+                c.fill();
+
+                // Cabelo curto com grisalho leve
+                c.fillStyle = '#475569'; // Grisalho sutil
+                c.beginPath();
+                c.arc(0, -67 + walkBounce, 17, Math.PI*0.9, Math.PI*2.1);
+                c.fill();
+
+                // Barba marcante do Anderson
+                c.fillStyle = '#334155'; // Barba com mechas grisalhas
+                c.beginPath();
+                c.arc(3, -57 + walkBounce, 14, 0.2, Math.PI*0.85);
+                c.fill();
+
+                // Olhos e sorriso amigável
+                c.fillStyle = '#0f172a';
+                c.beginPath();
+                c.arc(5, -63 + walkBounce, 2.5, 0, Math.PI*2);
+                c.fill();
+            }
+            else if (type === 'mamae') {
+                // --- 👩 MÃE: Cabelo castanho leve ondulado, óculos, gordinha, blusa rosa, jeans, pele parda ---
+                // Calça jeans
+                c.fillStyle = '#2563eb';
+                c.fillRect(-15 + legSwing/2, -22 + walkBounce, 13, 22);
+                c.fillRect(2 - legSwing/2, -22 + walkBounce, 13, 22);
+                c.fillStyle = '#ffffff';
+                c.fillRect(-15 + legSwing/2, -6 + walkBounce, 14, 6);
+                c.fillRect(2 - legSwing/2, -6 + walkBounce, 14, 6);
+
+                // Blusa Rosa charmosa, formato gordinha bonita
+                c.fillStyle = '#ec4899'; // Rosa vibrante
+                c.beginPath();
+                c.ellipse(0, -36 + walkBounce, 19, 17, 0, 0, Math.PI*2);
+                c.fill();
+
+                // Cabelo Castanho ondulado (parte de trás)
+                c.fillStyle = '#5c3a21';
+                c.beginPath();
+                c.ellipse(-4, -54 + walkBounce, 21, 20, 0, 0, Math.PI*2);
+                c.fill();
+
+                // Cabeça: Pele parda
+                c.fillStyle = '#d49b72';
+                c.beginPath();
+                c.arc(0, -58 + walkBounce, 15, 0, Math.PI*2);
+                c.fill();
+
+                // Cabelo castanho ondulado na frente
+                c.fillStyle = '#5c3a21';
+                c.beginPath();
+                c.arc(-2, -65 + walkBounce, 17, Math.PI*0.8, Math.PI*2.1);
+                c.fill();
+                c.beginPath();
+                c.arc(-14, -52 + walkBounce, 7, 0, Math.PI*2);
+                c.arc(10, -52 + walkBounce, 7, 0, Math.PI*2);
+                c.fill();
+
+                // Óculos estilosos da mãe
+                c.strokeStyle = '#be185d'; // Armação fofa
+                c.lineWidth = 2.5;
+                c.strokeRect(0, -61 + walkBounce, 10, 8);
+                c.strokeRect(-12, -61 + walkBounce, 10, 8);
+                c.beginPath();
+                c.moveTo(-2, -57 + walkBounce);
+                c.lineTo(0, -57 + walkBounce);
+                c.stroke();
+
+                // Olhos e sorriso
+                c.fillStyle = '#0f172a';
+                c.beginPath();
+                c.arc(5, -57 + walkBounce, 2, 0, Math.PI*2);
+                c.fill();
+                c.strokeStyle = '#be123c';
+                c.beginPath();
+                c.arc(3, -50 + walkBounce, 4, 0.2, Math.PI*0.8);
+                c.stroke();
+            }
+            else if (type === 'vovo') {
+                // --- 👵 VOVÓ: Cabelo curto, óculos, coluna levemente curvada, pele parda média ---
+                // Vestido / Saia confortável
+                c.fillStyle = '#7c3aed'; // Roxo carinhoso
+                c.beginPath();
+                c.moveTo(-16, -18 + walkBounce);
+                c.lineTo(16, -18 + walkBounce);
+                c.lineTo(12, -38 + walkBounce);
+                c.lineTo(-12, -38 + walkBounce);
+                c.closePath();
+                c.fill();
+
+                // Sapatinhos confortáveis
+                c.fillStyle = '#374151';
+                c.fillRect(-13 + legSwing/2, -6 + walkBounce, 12, 6);
+                c.fillRect(2 - legSwing/2, -6 + walkBounce, 12, 6);
+
+                // Tronco levemente curvado para frente
+                c.fillStyle = '#a855f7';
+                c.beginPath();
+                c.ellipse(3, -36 + walkBounce, 16, 15, 0.2, 0, Math.PI*2);
+                c.fill();
+
+                // Cabeça: Pele parda média, inclinada com amor
+                c.fillStyle = '#c58b63';
+                c.beginPath();
+                c.arc(4, -54 + walkBounce, 14, 0, Math.PI*2);
+                c.fill();
+
+                // Cabelo curto da Vovó (grisalho/branco fofinho)
+                c.fillStyle = '#e2e8f0';
+                c.beginPath();
+                c.arc(4, -59 + walkBounce, 16, Math.PI*0.7, Math.PI*2.2);
+                c.fill();
+                // Coque/ondinhas curtas
+                c.beginPath();
+                c.arc(-7, -56 + walkBounce, 6, 0, Math.PI*2);
+                c.arc(14, -56 + walkBounce, 6, 0, Math.PI*2);
+                c.fill();
+
+                // Óculos da Vovó
+                c.strokeStyle = '#b45309'; // Dourado
+                c.lineWidth = 2.2;
+                c.beginPath();
+                c.arc(8, -53 + walkBounce, 5, 0, Math.PI*2);
+                c.arc(-2, -53 + walkBounce, 5, 0, Math.PI*2);
+                c.stroke();
+                // Olhos e sorriso terno
+                c.fillStyle = '#1e293b';
+                c.beginPath();
+                c.arc(8, -53 + walkBounce, 1.8, 0, Math.PI*2);
+                c.fill();
+                c.strokeStyle = '#991b1b';
+                c.beginPath();
+                c.arc(6, -46 + walkBounce, 4, 0.2, Math.PI*0.8);
+                c.stroke();
+            }
+
+            c.restore();
+        }
+
+        // Renderiza os previews na tela de seleção
+        function renderPreviews() {
+            ['henrique', 'anderson', 'mamae', 'vovo'].forEach(type => {
+                const pCanvas = document.getElementById(`preview-${type}`);
+                if (!pCanvas) return;
+                const pCtx = pCanvas.getContext('2d');
+                pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+                drawCharacterSprite(pCtx, type, 15, 12, 50, 75, false, 0);
+            });
+        }
+
+        // --- MUNDO E FÍSICA DO JOGO ---
+        let player = {
+            x: 80,
+            y: 200,
+            width: 44,
+            height: 64,
+            vx: 0,
+            vy: 0,
+            speed: 5.5,
+            jumpPower: -13.5,
+            grounded: false,
+            facingLeft: false,
+            animFrame: 0,
+            animTimer: 0
+        };
+
+        const GRAVITY = 0.58;
+        let cameraX = 0;
+        let keys = { left: false, right: false, jump: false };
+
+        // Elementos do Cenário (Blocos, Moedas, Inimigos Gelatina, Castelo)
+        let blocks = [];
+        let collectibles = [];
+        let enemies = [];
+        let particles = [];
+        let clouds = [];
+        let finishPole = { x: 3200, y: 150, height: 260 };
+
+        function initLevel() {
+            blocks = [];
+            collectibles = [];
+            enemies = [];
+            particles = [];
+            clouds = [];
+
+            // Chão contínuo (sem buracos mortais)
+            blocks.push({ x: -200, y: 480, w: 3800, h: 200, type: 'ground' });
+
+            // Nuvens decorativas de fundo
+            for (let i = 0; i < 25; i++) {
+                clouds.push({
+                    x: Math.random() * 3500,
+                    y: 40 + Math.random() * 180,
+                    size: 40 + Math.random() * 50
+                });
+            }
+
+            // Colinas verdes com carinhas
+            // Blocos de interrogação '?' e tijolos coloridos
+            const blockPositions = [
+                { x: 300, y: 340, content: 'coin' },
+                { x: 360, y: 340, content: 'brick' },
+                { x: 420, y: 340, content: 'star' },
+                { x: 480, y: 340, content: 'brick' },
+                { x: 540, y: 340, content: 'letter', letter: 'H' },
+
+                // Plataforma mais alta
+                { x: 750, y: 260, content: 'brick' },
+                { x: 810, y: 260, content: 'star' },
+                { x: 870, y: 260, content: 'brick' },
+                { x: 930, y: 260, content: 'letter', letter: 'E' },
+
+                // Escadinha
+                { x: 1200, y: 420, w: 60, h: 60, type: 'stair' },
+                { x: 1260, y: 360, w: 60, h: 120, type: 'stair' },
+                { x: 1320, y: 300, w: 60, h: 180, type: 'stair' },
+                { x: 1500, y: 300, content: 'star' },
+                { x: 1560, y: 300, content: 'letter', letter: 'N' },
+                { x: 1620, y: 300, content: 'coin' },
+
+                // Mais blocos
+                { x: 1900, y: 340, content: 'letter', letter: 'R' },
+                { x: 1960, y: 340, content: 'star' },
+                { x: 2020, y: 340, content: 'letter', letter: 'I' },
+
+                { x: 2300, y: 260, content: 'star' },
+                { x: 2360, y: 260, content: 'letter', letter: 'Q' },
+                { x: 2420, y: 260, content: 'letter', letter: 'U' },
+                { x: 2480, y: 260, content: 'letter', letter: 'E' },
+
+                // Reta final
+                { x: 2750, y: 420, w: 60, h: 60, type: 'stair' },
+                { x: 2810, y: 360, w: 60, h: 120, type: 'stair' },
+                { x: 2870, y: 300, w: 60, h: 180, type: 'stair' }
+            ];
+
+            blockPositions.forEach(b => {
+                if (b.type === 'stair') {
+                    blocks.push({ x: b.x, y: b.y, w: b.w, h: b.h, type: 'brick' });
+                } else {
+                    blocks.push({
+                        x: b.x,
+                        y: b.y,
+                        w: 52,
+                        h: 52,
+                        type: b.content === 'brick' ? 'brick' : 'question',
+                        content: b.content,
+                        letter: b.letter || '',
+                        hit: false,
+                        bounce: 0
+                    });
+                }
+            });
+
+            // Moedas soltas pelo caminho
+            const coinXs = [240, 620, 660, 700, 1050, 1100, 1400, 1750, 1800, 2150, 2200, 2600, 2650];
+            coinXs.forEach(x => {
+                collectibles.push({ x: x, y: 420, size: 26, collected: false, floatOffset: Math.random()*10 });
+            });
+
+            // Monstrinhos fofos de gelatina (Gumbas do bem)
+            const enemyXs = [500, 850, 1450, 1850, 2250];
+            enemyXs.forEach((x, i) => {
+                enemies.push({
+                    x: x,
+                    y: 440,
+                    w: 40,
+                    h: 40,
+                    vx: -1.2,
+                    alive: true,
+                    color: i % 2 === 0 ? '#ec4899' : '#8b5cf6'
+                });
+            });
+
+            player.x = 80;
+            player.y = 350;
+            player.vx = 0;
+            player.vy = 0;
+            cameraX = 0;
+        }
+
+        // --- SISTEMA DE CONTROLE ---
+        function selectCharacter(charId) {
+            initAudio();
+            selectedHero = charId;
+            selectScreen.classList.add('hidden-screen');
+            gameRunning = true;
+
+            const names = {
+                'henrique': { name: 'Henrique', color: 'bg-red-500', phrase: 'Henrique selecionado! Vamos saltar como o Homem-Aranha!' },
+                'anderson': { name: 'Pai Anderson', color: 'bg-blue-600', phrase: 'Pai Anderson pronto para a aventura! Vamos nessa!' },
+                'mamae': { name: 'Mamãe', color: 'bg-pink-500', phrase: 'Mamãe pronta! Vamos pegar todas as estrelas!' },
+                'vovo': { name: 'Vovó', color: 'bg-purple-600', phrase: 'A Vovó vai jogar! Que alegria!' }
+            };
+
+            const hero = names[charId];
+            charBadgeEl.textContent = hero.name;
+            charBadgeEl.className = `text-xs ${hero.color} px-2 py-0.5 rounded-full ml-1 font-bold`;
+
+            speakText(hero.phrase);
+            initLevel();
+        }
+
+        function openCharSelect() {
+            gameRunning = false;
+            selectScreen.classList.remove('hidden-screen');
+        }
+
+        function restartLevel() {
+            winOverlay.classList.add('hidden-screen');
+            initLevel();
+            gameRunning = true;
+        }
+
+        // Teclado (PC)
+        window.addEventListener('keydown', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
+                if (!keys.jump && player.grounded) {
+                    player.vy = player.jumpPower;
+                    player.grounded = false;
+                    playSound('jump');
+                }
+                keys.jump = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.jump = false;
+        });
+
+        // Controles Touch (Mobile)
+        function bindTouch(btnId, action) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const startAction = (e) => {
+                e.preventDefault();
+                initAudio();
+                btn.classList.add('pressed');
+                if (action === 'left') keys.left = true;
+                if (action === 'right') keys.right = true;
+                if (action === 'jump') {
+                    if (player.grounded) {
+                        player.vy = player.jumpPower;
+                        player.grounded = false;
+                        playSound('jump');
+                    }
+                    keys.jump = true;
+                }
+            };
+
+            const endAction = (e) => {
+                e.preventDefault();
+                btn.classList.remove('pressed');
+                if (action === 'left') keys.left = false;
+                if (action === 'right') keys.right = false;
+                if (action === 'jump') keys.jump = false;
+            };
+
+            btn.addEventListener('pointerdown', startAction);
+            btn.addEventListener('pointerup', endAction);
+            btn.addEventListener('pointercancel', endAction);
+        }
+
+        bindTouch('btn-left', 'left');
+        bindTouch('btn-right', 'right');
+        bindTouch('btn-jump', 'jump');
+
+        // --- LOOP PRINCIPAL DO JOGO ---
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function update() {
+            if (!gameRunning) return;
+
+            // Movimento Horizontal
+            if (keys.left) {
+                player.vx = -player.speed;
+                player.facingLeft = true;
+            } else if (keys.right) {
+                player.vx = player.speed;
+                player.facingLeft = false;
+            } else {
+                player.vx *= 0.78; // Atrito
+            }
+
+            // Animação de caminhada
+            if (Math.abs(player.vx) > 0.5 && player.grounded) {
+                player.animTimer++;
+                if (player.animTimer > 8) {
+                    player.animFrame++;
+                    player.animTimer = 0;
+                }
+            } else {
+                player.animFrame = 0;
+            }
+
+            // Gravidade
+            player.vy += GRAVITY;
+
+            // Atualiza posição X e colisão com blocos
+            player.x += player.vx;
+            blocks.forEach(b => {
+                if (checkCollision(player, b)) {
+                    if (player.vx > 0) player.x = b.x - player.width;
+                    else if (player.vx < 0) player.x = b.x + b.w;
+                }
+            });
+
+            // Atualiza posição Y e colisão com blocos
+            player.y += player.vy;
+            player.grounded = false;
+
+            blocks.forEach(b => {
+                if (checkCollision(player, b)) {
+                    // Caindo no topo do bloco
+                    if (player.vy > 0 && player.y + player.height - player.vy <= b.y + 12) {
+                        player.y = b.y - player.height;
+                        player.vy = 0;
+                        player.grounded = true;
+                    }
+                    // Batendo a cabeça por baixo do bloco misterioso '?'
+                    else if (player.vy < 0) {
+                        player.y = b.y + b.h;
+                        player.vy = 2; // Rebate pra baixo
+                        
+                        if (b.type === 'question' && !b.hit) {
+                            b.hit = true;
+                            b.bounce = 10;
+                            playSound('block');
+
+                            // Spawna recompensa do bloco
+                            if (b.content === 'coin') {
+                                playSound('coin');
+                                coinsCollected += 5;
+                                coinsCountEl.textContent = coinsCollected;
+                                spawnFloatingText(b.x + 20, b.y, '+5 🪙');
+                            } else if (b.content === 'star') {
+                                playSound('coin');
+                                starsCollected++;
+                                starsCountEl.textContent = starsCollected;
+                                spawnFloatingText(b.x + 20, b.y, '⭐ ESTRELA!');
+                                speakText("Você achou uma estrela mágica!");
+                            } else if (b.content === 'letter') {
+                                playSound('coin');
+                                spawnFloatingText(b.x + 20, b.y, `Letra ${b.letter}!`);
+                                speakText(`Letrinha ${b.letter}!`);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Animação de pulinho do bloco batido
+            blocks.forEach(b => {
+                if (b.bounce > 0) b.bounce -= 1;
+            });
+
+            // Nuvem de resgate: se cair muito baixo, volta com segurança pro chão
+            if (player.y > 600) {
+                player.y = 350;
+                player.vy = 0;
+                player.x = Math.max(80, player.x - 200);
+                speakText("A nuvem te resgatou! Continue!");
+            }
+
+            // Coleta de Moedas
+            collectibles.forEach(c => {
+                if (!c.collected && Math.hypot((player.x + player.width/2) - (c.x + c.size/2), (player.y + player.height/2) - (c.y + c.size/2)) < 36) {
+                    c.collected = true;
+                    coinsCollected++;
+                    coinsCountEl.textContent = coinsCollected;
+                    playSound('coin');
+                    spawnParticles(c.x, c.y, '#facc15');
+                }
+            });
+
+            // Inimigos fofos de gelatina
+            enemies.forEach(e => {
+                if (!e.alive) return;
+                e.x += e.vx;
+                // Rebate nas bordas
+                if (e.x < 300 || e.x > 3000) e.vx *= -1;
+
+                // Colisão do jogador com o inimigo
+                if (checkCollision(player, { x: e.x, y: e.y, w: e.w, h: e.h })) {
+                    // Pulo em cima da cabeça (stomp)
+                    if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 14) {
+                        e.alive = false;
+                        player.vy = player.jumpPower * 0.75; // Dá um salto pra cima
+                        playSound('stomp');
+                        spawnParticles(e.x + 20, e.y + 20, e.color);
+                        spawnFloatingText(e.x + 20, e.y, '❤️ Pluft!');
+                    } else {
+                        // Toque suave lateral: apenas empurra pra trás sem matar a criança
+                        player.vx = player.x < e.x ? -8 : 8;
+                        player.vy = -5;
+                        playSound('block');
+                    }
+                }
+            });
+
+            // Chegada na Bandeira / Castelo
+            if (player.x >= finishPole.x) {
+                gameRunning = false;
+                playSound('win');
+                winTitleEl.textContent = `PARABÉNS, ${selectedHero.toUpperCase()}! 🏆`;
+                speakText(`Muito bem! Você completou a aventura com a família!`);
+                winOverlay.classList.remove('hidden-screen');
+            }
+
+            // Câmera acompanha o jogador suavemente
+            const targetCamX = player.x - window.innerWidth * 0.35;
+            cameraX += (targetCamX - cameraX) * 0.1;
+            cameraX = Math.max(0, cameraX);
+
+            // Atualiza partículas
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+            });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        function checkCollision(r1, r2) {
+            return r1.x < r2.x + r2.w &&
+                   r1.x + r1.width > r2.x &&
+                   r1.y < r2.y + r2.h &&
+                   r1.y + r1.height > r2.y;
+        }
+
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 12; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: color,
+                    life: 1.0
+                });
+            }
+        }
+
+        let floatingTexts = [];
+        function spawnFloatingText(x, y, text) {
+            floatingTexts.push({ x: x, y: y, text: text, vy: -1.5, life: 1.0 });
+        }
+
+        // --- RENDERIZAÇÃO DO MUNDO ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Céu azul clássico com gradiente
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, '#5c94fc');
+            skyGrad.addColorStop(0.7, '#85b6ff');
+            skyGrad.addColorStop(1, '#c0d9ff');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            // 2. Nuvens fofas ao fundo
+            clouds.forEach(c => {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.size, 0, Math.PI*2);
+                ctx.arc(c.x + c.size*0.7, c.y - c.size*0.2, c.size*0.8, 0, Math.PI*2);
+                ctx.arc(c.x + c.size*1.4, c.y, c.size*0.9, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // 3. Colinas verdes com olhinhos felizes estilo Super Mario World
+            for (let i = 0; i < 10; i++) {
+                const hillX = i * 450 + 100;
+                ctx.fillStyle = '#22c55e';
+                ctx.beginPath();
+                ctx.ellipse(hillX, 480, 160, 120, 0, Math.PI, Math.PI*2);
+                ctx.fill();
+                // Olhinhos na colina
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(hillX - 25, 410, 6, 16);
+                ctx.fillRect(hillX + 20, 410, 6, 16);
+            }
+
+            // 4. Blocos e Chão
+            blocks.forEach(b => {
+                const bounceY = b.y - (b.bounce || 0);
+
+                if (b.type === 'ground') {
+                    // Chão com graminha verde por cima e terra marrom
+                    ctx.fillStyle = '#4ade80'; // Grama
+                    ctx.fillRect(b.x, b.y, b.w, 24);
+                    ctx.fillStyle = '#854d0e'; // Terra
+                    ctx.fillRect(b.x, b.y + 24, b.w, b.h - 24);
+                }
+                else if (b.type === 'question') {
+                    // Bloco de interrogação '?'
+                    if (b.hit) {
+                        ctx.fillStyle = '#94a3b8'; // Bloco vazio marrom/cinza
+                        ctx.fillRect(b.x, bounceY, b.w, b.h);
+                        ctx.strokeStyle = '#475569';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(b.x, bounceY, b.w, b.h);
+                    } else {
+                        // Bloco dourado pulsante
+                        ctx.fillStyle = '#f59e0b';
+                        ctx.fillRect(b.x, bounceY, b.w, b.h);
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.fillRect(b.x + 4, bounceY + 4, b.w - 8, b.h - 8);
+                        ctx.strokeStyle = '#b45309';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(b.x, bounceY, b.w, b.h);
+                        // '?' ou Letra
+                        ctx.fillStyle = '#78350f';
+                        ctx.font = 'bold 30px "Fredoka", sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(b.letter || '?', b.x + b.w/2, bounceY + 37);
+                    }
+                }
+                else if (b.type === 'brick') {
+                    // Tijolo clássico
+                    ctx.fillStyle = '#b45309';
+                    ctx.fillRect(b.x, bounceY, b.w, b.h);
+                    ctx.fillStyle = '#d97706';
+                    ctx.fillRect(b.x + 3, bounceY + 3, b.w - 6, b.h - 6);
+                    ctx.strokeStyle = '#78350f';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(b.x, bounceY, b.w, b.h);
+                }
+            });
+
+            // 5. Moedas flutuantes
+            collectibles.forEach(c => {
+                if (c.collected) return;
+                const floatY = c.y + Math.sin(Date.now()*0.005 + c.floatOffset) * 6;
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(c.x + c.size/2, floatY, c.size/2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#ca8a04';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                // Brilho
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(c.x + c.size*0.35, floatY - 3, 3, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // 6. Inimigos Gelatina Fofos
+            enemies.forEach(e => {
+                if (!e.alive) return;
+                ctx.fillStyle = e.color;
+                ctx.beginPath();
+                ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, Math.PI, 0);
+                ctx.lineTo(e.x + e.w, e.y + e.h);
+                ctx.lineTo(e.x, e.y + e.h);
+                ctx.closePath();
+                ctx.fill();
+                // Olhinhos fofos
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(e.x + 12, e.y + 18, 5, 0, Math.PI*2);
+                ctx.arc(e.x + 28, e.y + 18, 5, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(e.x + 13, e.y + 18, 2.5, 0, Math.PI*2);
+                ctx.arc(e.x + 29, e.y + 18, 2.5, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // 7. Castelo Final da Família
+            const castX = finishPole.x;
+            ctx.fillStyle = '#cbd5e1'; // Castelo cinza claro
+            ctx.fillRect(castX + 120, 260, 220, 220);
+            ctx.fillStyle = '#94a3b8';
+            // Torres
+            ctx.fillRect(castX + 90, 200, 70, 280);
+            ctx.fillRect(castX + 300, 200, 70, 280);
+            // Telhados cônicos vermelhos
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(castX + 75, 200);
+            ctx.lineTo(castX + 125, 120);
+            ctx.lineTo(castX + 175, 200);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(castX + 285, 200);
+            ctx.lineTo(castX + 335, 120);
+            ctx.lineTo(castX + 385, 200);
+            ctx.fill();
+            // Porta do castelo
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.arc(castX + 230, 410, 45, Math.PI, 0);
+            ctx.lineTo(castX + 275, 480);
+            ctx.lineTo(castX + 185, 480);
+            ctx.closePath();
+            ctx.fill();
+
+            // Mastro da Bandeira
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(castX, 160);
+            ctx.lineTo(castX, 480);
+            ctx.stroke();
+            // Bandeira com coração
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(castX, 160, 60, 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px "Fredoka"';
+            ctx.fillText('❤️', castX + 15, 190);
+
+            // 8. Desenho do Personagem Selecionado da Família
+            drawCharacterSprite(
+                ctx, 
+                selectedHero, 
+                player.x, 
+                player.y, 
+                player.width, 
+                player.height, 
+                player.facingLeft, 
+                player.animFrame
+            );
+
+            // 9. Partículas de Efeito
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 10. Textos Flutuantes (+5, Letras, Estrela)
+            floatingTexts.forEach(ft => {
+                ft.y += ft.vy;
+                ft.life -= 0.02;
+                ctx.fillStyle = `rgba(255, 255, 255, ${ft.life})`;
+                ctx.strokeStyle = `rgba(0, 0, 0, ${ft.life})`;
+                ctx.lineWidth = 3;
+                ctx.font = 'bold 22px "Fredoka", sans-serif';
+                ctx.strokeText(ft.text, ft.x, ft.y);
+                ctx.fillText(ft.text, ft.x, ft.y);
+            });
+            floatingTexts = floatingTexts.filter(ft => ft.life > 0);
+
+            ctx.restore();
+        }
+
+        // Loop de Animação
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Inicialização
+        window.onload = () => {
+            renderPreviews();
+            initLevel();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
