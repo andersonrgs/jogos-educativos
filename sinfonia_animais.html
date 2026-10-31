@@ -77,6 +77,8 @@
         /* Barra de categorias com rolagem horizontal suave */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .hidden-screen { display: none !important; }
     </style>
 </head>
 <body class="h-[100dvh] w-screen flex flex-col justify-between items-center relative p-2 sm:p-4">
@@ -455,6 +457,7 @@
         // --- INICIALIZAÇÃO ---
         function startGame() {
             initAudio();
+            startScreen.style.display = 'none';
             startScreen.classList.add('hidden-screen');
             renderCategoryTabs();
             renderGrid();
