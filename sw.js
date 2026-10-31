@@ -1,9 +1,10 @@
-const CACHE_NAME = 'jogos-kids-v3';
+const CACHE_NAME = 'jogos-kids-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './aventura_familia.html',
+  './corrida_kart.html',
   './char_henrique.png',
   './char_anderson.png',
   './char_mamae.png',

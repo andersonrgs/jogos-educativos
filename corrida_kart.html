@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mario Kart do Henrique - Corrida da Família</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: #000000;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Botões Touch Ergonômicos */
+        .touch-btn {
+            background: rgba(255, 255, 255, 0.45);
+            border: 3.5px solid rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 900;
+            transition: transform 0.08s, background 0.08s;
+            touch-action: none;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .gas-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-color: #ffffff;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.6);
+        }
+
+        .gas-btn:active, .gas-btn.pressed {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+        }
+
+        .item-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-color: #fef08a;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.6);
+            animation: pulse-item 1.2s infinite alternate;
+        }
+
+        @keyframes pulse-item {
+            0% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+            100% { transform: scale(1.08); box-shadow: 0 0 30px rgba(250, 204, 21, 0.9); }
+        }
+
+        .hidden-screen { display: none !important; }
+
+        /* Brilho arco-íris para Super Estrela */
+        .rainbow-glow {
+            animation: rainbow 1.5s linear infinite;
+        }
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="w-screen h-[100dvh] flex flex-col justify-between items-center relative overflow-hidden">
+
+    <!-- Canvas Principal da Corrida 3D -->
+    <canvas id="raceCanvas" class="absolute inset-0 w-full h-full z-0 block"></canvas>
+
+    <!-- Header HUD Superior do Mario Kart -->
+    <header class="w-full max-w-5xl px-3 pt-3 flex justify-between items-start z-20 flex-none pointer-events-auto">
+        <!-- Controles de Menu e Pista -->
+        <div class="flex items-center gap-2">
+            <a href="index.html" class="px-3.5 py-2 bg-white/90 hover:bg-white text-sky-900 text-sm sm:text-base rounded-2xl shadow-lg border-2 border-sky-300 flex items-center gap-1.5 font-black active:scale-95 transition-all">
+                🏠 <span>Menu</span>
+            </a>
+            <button onclick="openTrackSelector()" class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs sm:text-sm rounded-2xl shadow-lg font-black flex items-center gap-1.5 active:scale-95 border-2 border-yellow-200 transition-all">
+                🏁 <span id="track-name-btn">Parque</span>
+            </button>
+        </div>
+
+        <!-- Caixa de Item Estilo Mario Kart [?] -->
+        <div class="flex flex-col items-center">
+            <div id="item-box-display" class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-b from-yellow-300 via-amber-400 to-amber-600 rounded-3xl border-4 border-white shadow-2xl flex items-center justify-center transform transition-all active:scale-95">
+                <span id="item-emoji" class="text-3xl sm:text-4xl filter drop-shadow">❓</span>
+            </div>
+            <span id="item-name" class="text-xs font-black text-yellow-300 drop-shadow mt-1">Pegue [?]</span>
+        </div>
+
+        <!-- Placar de Corrida: Posição e Voltas -->
+        <div class="flex items-center gap-2 sm:gap-3 bg-black/65 backdrop-blur-md px-4 py-2 rounded-3xl border-2 border-white/40 text-white font-black shadow-2xl">
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-gray-300 uppercase tracking-wider">Posição</span>
+                <span id="pos-display" class="text-2xl sm:text-3xl text-yellow-300 font-black leading-none drop-shadow">1º</span>
+            </div>
+            <div class="h-8 w-0.5 bg-white/30"></div>
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-gray-300 uppercase tracking-wider">Volta</span>
+                <span id="lap-display" class="text-lg sm:text-xl text-green-400 font-black leading-none">1/3</span>
+            </div>
+            <div class="h-8 w-0.5 bg-white/30 hidden sm:block"></div>
+            <div class="hidden sm:flex flex-col items-center">
+                <span class="text-[10px] text-gray-300 uppercase tracking-wider">Velocidade</span>
+                <span id="speed-display" class="text-lg text-sky-300 font-black leading-none">0 km/h</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Minimapa Radar da Pista no Canto -->
+    <div id="minimap-container" class="absolute top-20 right-3 z-20 w-24 h-24 sm:w-32 sm:h-32 bg-black/55 backdrop-blur-md rounded-2xl border-2 border-white/40 shadow-xl pointer-events-none p-1.5 flex items-center justify-center">
+        <canvas id="miniCanvas" width="120" height="120" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- Indicador de Volta Final / Alerta Sonoro Animado -->
+    <div id="lap-alert" class="absolute inset-x-0 top-1/3 flex justify-center items-center z-30 pointer-events-none opacity-0 transition-opacity duration-300">
+        <div class="bg-red-600/95 text-white border-4 border-yellow-300 text-3xl sm:text-5xl font-black py-3 px-8 rounded-full shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-bounce">
+            🔥 ÚLTIMA VOLTA! 🔥
+        </div>
+    </div>
+
+    <!-- Controles Touch na Tela para Celular / Tablet -->
+    <div id="touch-controls" class="fixed inset-x-0 bottom-0 px-4 pb-4 sm:pb-6 flex justify-between items-end z-30 pointer-events-none max-w-5xl mx-auto pb-[max(16px,env(safe-area-inset-bottom))]">
+        <!-- Volante Esquerda / Direita -->
+        <div class="flex gap-3 pointer-events-auto">
+            <button id="btn-left" class="touch-btn w-16 h-16 sm:w-20 sm:h-20" aria-label="Virar Esquerda">◀</button>
+            <button id="btn-right" class="touch-btn w-16 h-16 sm:w-20 sm:h-20" aria-label="Virar Direita">▶</button>
+        </div>
+
+        <!-- Ação: Usar Item e Acelerar/Turbo -->
+        <div class="flex items-center gap-3 pointer-events-auto">
+            <!-- Botão de Usar Item -->
+            <button id="btn-item" class="touch-btn item-btn w-16 h-16 sm:w-20 sm:h-20 text-xl font-black" aria-label="Usar Item">
+                🎁
+            </button>
+            <!-- Botão de Acelerar / Turbo -->
+            <button id="btn-gas" class="touch-btn gas-btn w-20 h-20 sm:w-24 sm:h-24 text-base sm:text-lg font-black tracking-wider flex flex-col items-center justify-center" aria-label="Acelerar">
+                <span>VAI!</span>
+                <span class="text-xs">⚡</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Seleção de Pista / Cenários -->
+    <div id="track-modal" class="absolute inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center hidden-screen">
+        <h2 class="text-3xl sm:text-5xl font-black text-yellow-300 mb-2 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+            Escolha a Pista de Corrida! 🏎️✨
+        </h2>
+        <p class="text-sm sm:text-xl text-white font-bold mb-6">
+            Onde o Henrique e a família vão correr hoje?
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl w-full mb-6">
+            <!-- Pista 1: Parque -->
+            <button onclick="changeTrack(0)" class="bg-gradient-to-b from-green-500 to-emerald-700 hover:from-green-400 hover:to-emerald-600 text-white p-4 rounded-3xl border-4 border-white shadow-2xl flex flex-col items-center active:scale-95 transition-all">
+                <span class="text-5xl mb-2">🌳🌻</span>
+                <span class="text-xl font-black">Circuito do Parque</span>
+                <span class="text-xs text-green-100 font-bold mt-1">Colinas verdes e flores alegres</span>
+            </button>
+
+            <!-- Pista 2: Praia -->
+            <button onclick="changeTrack(1)" class="bg-gradient-to-b from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white p-4 rounded-3xl border-4 border-white shadow-2xl flex flex-col items-center active:scale-95 transition-all">
+                <span class="text-5xl mb-2">🏖️🌊</span>
+                <span class="text-xl font-black">Praia do Pôr do Sol</span>
+                <span class="text-xs text-amber-100 font-bold mt-1">Palmeiras, areia e brisa do mar</span>
+            </button>
+
+            <!-- Pista 3: Espaço Estrelado -->
+            <button onclick="changeTrack(2)" class="bg-gradient-to-b from-indigo-700 to-purple-900 hover:from-indigo-600 hover:to-purple-800 text-white p-4 rounded-3xl border-4 border-yellow-300 shadow-2xl flex flex-col items-center active:scale-95 transition-all">
+                <span class="text-5xl mb-2">🌌🚀</span>
+                <span class="text-xl font-black">Estrada Espacial</span>
+                <span class="text-xs text-purple-200 font-bold mt-1">Estrelas brilhantes e neon mágico</span>
+            </button>
+        </div>
+
+        <button onclick="closeTrackSelector()" class="px-8 py-3 bg-white text-gray-900 text-lg font-black rounded-full shadow-xl hover:bg-yellow-300 active:scale-95 transition-all">
+            Voltar para a Corrida ▶
+        </button>
+    </div>
+
+    <!-- Tela de Vitória / Pódio -->
+    <div id="victory-modal" class="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center hidden-screen">
+        <div class="text-8xl sm:text-9xl mb-2 animate-bounce drop-shadow-[0_0_30px_rgba(250,204,21,0.8)]">
+            🏆✨
+        </div>
+        <h2 id="victory-title" class="text-3xl sm:text-6xl font-black text-yellow-300 mb-2 drop-shadow-md">
+            HENRIQUE É O CAMPEÃO!
+        </h2>
+        <p id="victory-subtitle" class="text-base sm:text-2xl text-white font-bold mb-6 max-w-lg">
+            Você cruzou a linha de chegada em 1º Lugar com a família!
+        </p>
+
+        <!-- Pódio dos Corredores -->
+        <div class="flex items-end justify-center gap-3 sm:gap-6 mb-8 w-full max-w-md">
+            <!-- 2º Lugar -->
+            <div class="flex flex-col items-center w-24 sm:w-28">
+                <span id="podium-2-icon" class="text-4xl mb-1">🧔</span>
+                <span id="podium-2-name" class="text-xs font-black text-blue-300">Papai</span>
+                <div class="w-full h-20 bg-gradient-to-t from-gray-500 to-gray-400 rounded-t-2xl border-2 border-white/50 flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                    2º
+                </div>
+            </div>
+            <!-- 1º Lugar -->
+            <div class="flex flex-col items-center w-28 sm:w-32">
+                <span class="text-5xl mb-1 animate-pulse">🕷️🏎️</span>
+                <span class="text-sm font-black text-yellow-300">Henrique</span>
+                <div class="w-full h-32 bg-gradient-to-t from-amber-600 via-yellow-400 to-yellow-300 rounded-t-3xl border-4 border-white flex flex-col items-center justify-center text-yellow-950 font-black text-4xl shadow-2xl">
+                    1º
+                    <span class="text-xs text-yellow-900 font-bold">Vencedor!</span>
+                </div>
+            </div>
+            <!-- 3º Lugar -->
+            <div class="flex flex-col items-center w-24 sm:w-28">
+                <span id="podium-3-icon" class="text-4xl mb-1">👩</span>
+                <span id="podium-3-name" class="text-xs font-black text-pink-300">Mamãe</span>
+                <div class="w-full h-14 bg-gradient-to-t from-amber-800 to-amber-700 rounded-t-2xl border-2 border-white/50 flex items-center justify-center text-white font-black text-xl shadow-lg">
+                    3º
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 justify-center">
+            <button onclick="restartRace()" class="px-8 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white text-xl font-black rounded-full shadow-2xl active:scale-95 transform transition-all">
+                Correr Novamente 🔄
+            </button>
+            <button onclick="openTrackSelector()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-xl font-black rounded-full shadow-2xl active:scale-95 transform transition-all">
+                Trocar de Pista 🏁
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * MOTOR DE CORRIDA ESTILO MARIO KART (PSEUDO-3D / MODO 7 KIDS)
+         * COM HENRIQUE NO SPIDER-KART, PAPAI ANDERSON, MAMÃE E VOVÓ!
+         */
+
+        const canvas = document.getElementById('raceCanvas');
+        const ctx = canvas.getContext('2d');
+        const miniCanvas = document.getElementById('miniCanvas');
+        const miniCtx = miniCanvas.getContext('2d');
+
+        // Carregamento dos Avatares dos Personagens
+        const avatars = {
+            henrique: new Image(),
+            anderson: new Image(),
+            mamae: new Image(),
+            vovo: new Image()
+        };
+        avatars.henrique.src = 'char_henrique.png?v=2';
+        avatars.anderson.src = 'char_anderson.png?v=2';
+        avatars.mamae.src = 'char_mamae.png?v=2';
+        avatars.vovo.src = 'char_vovo.png?v=2';
+
+        // Áudio WebAudio Sintetizado
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'item_roulette') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.setValueAtTime(900, now + 0.05);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'turbo') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(750, now + 0.35);
+                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else if (type === 'banana_slip') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.35);
+                    gain.gain.setValueAtTime(0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'star') {
+                    [523, 659, 783, 1046].forEach((f, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine';
+                        o.frequency.value = f;
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        g.gain.setValueAtTime(0.2, now + i * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
+                        o.start(now + i * 0.08);
+                        o.stop(now + i * 0.08 + 0.2);
+                    });
+                } else if (type === 'victory') {
+                    [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'triangle';
+                        o.frequency.value = f;
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        g.gain.setValueAtTime(0.25, now + i * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
+                        o.start(now + i * 0.1);
+                        o.stop(now + i * 0.1 + 0.4);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        // Síntese de Voz Amigável
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'pt-BR';
+                    u.rate = 1.0;
+                    u.pitch = 1.2;
+                    const voices = window.speechSynthesis.getVoices();
+                    const pt = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                    if (pt) u.voice = pt;
+                    window.speechSynthesis.speak(u);
+                } catch(e) {}
+            }
+        }
+
+        // Definição das Pistas Temáticas
+        const TRACKS = [
+            {
+                name: "Circuito do Parque",
+                skyTop: "#38bdf8",
+                skyBottom: "#bae6fd",
+                grassLight: "#4ade80",
+                grassDark: "#22c55e",
+                roadLight: "#475569",
+                roadDark: "#334155",
+                curbLight: "#ef4444",
+                curbDark: "#ffffff",
+                propType: "park",
+                theme: "park"
+            },
+            {
+                name: "Praia do Pôr do Sol",
+                skyTop: "#f97316",
+                skyBottom: "#fef08a",
+                grassLight: "#fef08a",
+                grassDark: "#facc15",
+                roadLight: "#64748b",
+                roadDark: "#475569",
+                curbLight: "#0284c7",
+                curbDark: "#ffffff",
+                propType: "beach",
+                theme: "beach"
+            },
+            {
+                name: "Estrada Espacial",
+                skyTop: "#0f172a",
+                skyBottom: "#312e81",
+                grassLight: "#4338ca",
+                grassDark: "#1e1b4b",
+                roadLight: "#1e293b",
+                roadDark: "#0f172a",
+                curbLight: "#a855f7",
+                curbDark: "#06b6d4",
+                propType: "space",
+                theme: "space"
+            }
+        ];
+
+        let currentTrackIndex = 0;
+
+        // Configuração da Estrada Pseudo-3D
+        const ROAD_WIDTH = 2000;
+        const SEGMENT_LENGTH = 180;
+        const CAMERA_DEPTH = 0.85;
+        const CAMERA_HEIGHT = 1000;
+        const DRAW_DISTANCE = 220;
+
+        let segments = [];
+        let trackLength = 0;
+
+        // Criação procedural da pista com curvas e relevo
+        function buildTrack(trackIndex) {
+            segments = [];
+            const numSegments = 600;
+
+            for (let i = 0; i < numSegments; i++) {
+                let curve = 0;
+                let hill = 0;
+
+                // Curva 1 suave à direita
+                if (i > 60 && i < 140) curve = 2.4;
+                // Subida e descida com curva em S
+                if (i > 180 && i < 280) {
+                    curve = -2.8;
+                    hill = Math.sin((i - 180) / 100 * Math.PI) * 550;
+                }
+                // Curvão longo à direita
+                if (i > 340 && i < 440) curve = 3.2;
+                // Pequena chicane final
+                if (i > 490 && i < 540) curve = (i % 20 < 10 ? 2 : -2);
+
+                const seg = {
+                    index: i,
+                    p1: { world: { x: 0, y: hill, z: i * SEGMENT_LENGTH }, screen: {} },
+                    p2: { world: { x: 0, y: hill, z: (i + 1) * SEGMENT_LENGTH }, screen: {} },
+                    curve: curve,
+                    sprites: [],
+                    cars: [],
+                    hasItemBox: (i % 80 === 40),
+                    hasBoostPad: (i === 110 || i === 310 || i === 470),
+                    hasBanana: false,
+                    bananaX: 0
+                };
+
+                // Decoração de beira de pista
+                if (i % 12 === 0) {
+                    seg.sprites.push({ x: -1.6, type: 'tree' });
+                    seg.sprites.push({ x: 1.6, type: 'tree' });
+                }
+                if (i === 0) {
+                    seg.sprites.push({ x: 0, type: 'finish_banner' });
+                }
+
+                segments.push(seg);
+            }
+
+            trackLength = segments.length * SEGMENT_LENGTH;
+        }
+
+        // Estado do Jogador (Henrique)
+        let player = {
+            x: 0, // lateral (-1 esq, +1 dir)
+            z: 0, // progresso na pista
+            speed: 0,
+            maxSpeed: 8200,
+            accel: 190,
+            decel: 150,
+            braking: 350,
+            boostTimer: 0,
+            starTimer: 0,
+            spinTimer: 0,
+            lap: 1,
+            maxLaps: 3,
+            item: null, // 'mushroom', 'banana', 'star', 'apple'
+            rouletteTimer: 0,
+            rouletteItem: null,
+            tilt: 0
+        };
+
+        // Corredores Rivais (IA)
+        let rivals = [
+            { id: 'anderson', name: 'Pai Anderson', x: -0.4, z: 200, speed: 7400, color: '#1d4ed8', avatar: 'anderson', lap: 1, spinTimer: 0 },
+            { id: 'mamae',    name: 'Mamãe',        x: 0.4,  z: 160, speed: 7300, color: '#ec4899', avatar: 'mamae',    lap: 1, spinTimer: 0 },
+            { id: 'vovo',     name: 'Vovó',         x: -0.2, z: 120, speed: 7100, color: '#9333ea', avatar: 'vovo',     lap: 1, spinTimer: 0 },
+            { id: 'pinguim',  name: 'Pinguim',      x: 0.3,  z: 80,  speed: 7000, color: '#06b6d4', avatar: null,       lap: 1, spinTimer: 0 }
+        ];
+
+        // Partículas de fumaça, turbo e confete
+        let particles = [];
+        function spawnParticle(x, y, color, size = 6, vx = 0, vy = 0) {
+            particles.push({ x, y, color, size, vx, vy, life: 1.0 });
+        }
+
+        // Elementos DOM HUD
+        const itemBoxDisplay = document.getElementById('item-box-display');
+        const itemEmojiEl = document.getElementById('item-emoji');
+        const itemNameEl = document.getElementById('item-name');
+        const posDisplay = document.getElementById('pos-display');
+        const lapDisplay = document.getElementById('lap-display');
+        const speedDisplay = document.getElementById('speed-display');
+        const lapAlert = document.getElementById('lap-alert');
+        const trackNameBtn = document.getElementById('track-name-btn');
+        const trackModal = document.getElementById('track-modal');
+        const victoryModal = document.getElementById('victory-modal');
+
+        // Controles de Entrada
+        let keys = { left: false, right: false, gas: false, brake: false };
+
+        window.addEventListener('keydown', e => {
+            initAudio();
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.gas = true;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.brake = true;
+            if (e.code === 'Space') useItem();
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.gas = false;
+            if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.brake = false;
+        });
+
+        function bindTouchBtn(id, pressCb, releaseCb) {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+
+            const onDown = (e) => {
+                e.preventDefault();
+                initAudio();
+                btn.classList.add('pressed');
+                pressCb();
+            };
+            const onUp = (e) => {
+                e.preventDefault();
+                btn.classList.remove('pressed');
+                releaseCb();
+            };
+
+            btn.addEventListener('pointerdown', onDown);
+            btn.addEventListener('pointerup', onUp);
+            btn.addEventListener('pointercancel', onUp);
+            btn.addEventListener('pointerleave', onUp);
+        }
+
+        bindTouchBtn('btn-left', () => keys.left = true, () => keys.left = false);
+        bindTouchBtn('btn-right', () => keys.right = true, () => keys.right = false);
+        bindTouchBtn('btn-gas', () => keys.gas = true, () => keys.gas = false);
+        document.getElementById('btn-item').addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            initAudio();
+            useItem();
+        });
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Sistema de Itens do Mario Kart
+        const ITEMS = [
+            { type: 'mushroom', emoji: '🍄', name: 'Super Cogumelo Turbo!', phrase: 'Cogumelo Turbo ativado! Vroooom!' },
+            { type: 'banana',   emoji: '🍌', name: 'Casca de Banana!',        phrase: 'Banana na pista! Cuidado rivais!' },
+            { type: 'star',     emoji: '⭐', name: 'Super Estrela!',          phrase: 'Super Estrela! Invencível e super veloz!' },
+            { type: 'apple',    emoji: '🍎', name: 'Maçã Super Saudável!',    phrase: 'Maçã deliciosa cheia de energia!' }
+        ];
+
+        function triggerItemRoulette() {
+            if (player.item || player.rouletteTimer > 0) return;
+            player.rouletteTimer = 35;
+            playSound('item_roulette');
+        }
+
+        function useItem() {
+            if (!player.item) return;
+
+            if (player.item === 'mushroom') {
+                player.boostTimer = 90;
+                playSound('turbo');
+                speak("Super Turbo!");
+            } else if (player.item === 'banana') {
+                // Lança banana atrás do kart no segmento atual
+                const segIdx = Math.floor(player.z / SEGMENT_LENGTH) % segments.length;
+                const seg = segments[segIdx];
+                seg.hasBanana = true;
+                seg.bananaX = player.x;
+                playSound('banana_slip');
+                speak("Banana solta na pista!");
+            } else if (player.item === 'star') {
+                player.starTimer = 180;
+                player.boostTimer = 180;
+                playSound('star');
+                speak("Super Estrela!");
+            } else if (player.item === 'apple') {
+                player.boostTimer = 70;
+                playSound('turbo');
+                speak("Fruta da vitória!");
+            }
+
+            player.item = null;
+            itemEmojiEl.textContent = '❓';
+            itemNameEl.textContent = 'Pegue [?]';
+        }
+
+        // Projeção 3D para 2D de um Ponto
+        function project(p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) {
+            p.camera = {
+                x: (p.world.x || 0) - cameraX,
+                y: (p.world.y || 0) - cameraY,
+                z: (p.world.z || 0) - cameraZ
+            };
+            p.screen.scale = cameraDepth / p.camera.z;
+            p.screen.x = Math.round((width / 2) + (p.screen.scale * p.camera.x * width / 2));
+            p.screen.y = Math.round((height / 2) - (p.screen.scale * p.camera.y * height / 2));
+            p.screen.w = Math.round((p.screen.scale * roadWidth * width / 2));
+        }
+
+        // Renderização de Polígono da Estrada
+        function drawPolygon(c, x1, y1, x2, y2, x3, y3, x4, y4, color) {
+            c.fillStyle = color;
+            c.beginPath();
+            c.moveTo(x1, y1);
+            c.lineTo(x2, y2);
+            c.lineTo(x3, y3);
+            c.lineTo(x4, y4);
+            c.closePath();
+            c.fill();
+        }
+
+        // Desenho dos Sprites de Cenário e Props
+        function drawSprite(c, width, height, sprite, scale, destX, destY, theme) {
+            if (sprite.type === 'tree') {
+                const w = 120 * scale;
+                const h = 200 * scale;
+                if (theme === 'beach') {
+                    // Palmeira tropical
+                    c.fillStyle = '#78350f';
+                    c.fillRect(destX - w * 0.1, destY - h, w * 0.2, h);
+                    c.fillStyle = '#16a34a';
+                    c.beginPath();
+                    c.arc(destX, destY - h, w * 0.6, 0, Math.PI * 2);
+                    c.fill();
+                } else if (theme === 'space') {
+                    // Cristal Cósmico
+                    c.fillStyle = '#c084fc';
+                    c.beginPath();
+                    c.moveTo(destX, destY - h);
+                    c.lineTo(destX + w * 0.4, destY - h * 0.5);
+                    c.lineTo(destX, destY);
+                    c.lineTo(destX - w * 0.4, destY - h * 0.5);
+                    c.closePath();
+                    c.fill();
+                } else {
+                    // Árvore do Parque
+                    c.fillStyle = '#92400e';
+                    c.fillRect(destX - w * 0.12, destY - h * 0.5, w * 0.24, h * 0.5);
+                    c.fillStyle = '#15803d';
+                    c.beginPath();
+                    c.arc(destX, destY - h * 0.6, w * 0.55, 0, Math.PI * 2);
+                    c.fill();
+                    c.fillStyle = '#22c55e';
+                    c.beginPath();
+                    c.arc(destX - w * 0.15, destY - h * 0.75, w * 0.35, 0, Math.PI * 2);
+                    c.fill();
+                }
+            } else if (sprite.type === 'finish_banner') {
+                // Arco de Chegada / Largada com quadriculado
+                const w = ROAD_WIDTH * 1.3 * scale;
+                const h = 240 * scale;
+                c.fillStyle = '#ffffff';
+                c.fillRect(destX - w / 2, destY - h, w, 35 * scale);
+                // Xadrez
+                for (let i = 0; i < 16; i++) {
+                    c.fillStyle = i % 2 === 0 ? '#000000' : '#ffffff';
+                    c.fillRect(destX - w / 2 + (w / 16) * i, destY - h, w / 16, 35 * scale);
+                }
+                c.fillStyle = '#f59e0b';
+                c.fillRect(destX - w / 2, destY - h * 1.4, w, 40 * scale);
+                c.fillStyle = '#ffffff';
+                c.font = `bold ${Math.max(12, Math.round(22 * scale))}px "Fredoka", sans-serif`;
+                c.textAlign = 'center';
+                c.fillText('🏁 CHEGADA DA FAMÍLIA! 🏁', destX, destY - h * 1.15);
+            }
+        }
+
+        // Desenho dos Karts Rivais na Pista 3D
+        function drawRivalKart(c, rival, scale, destX, destY) {
+            const w = 150 * scale;
+            const h = 110 * scale;
+
+            c.save();
+            c.translate(destX, destY);
+
+            if (rival.spinTimer > 0) {
+                c.rotate((Date.now() * 0.02) % (Math.PI * 2));
+            }
+
+            // Sombra
+            c.fillStyle = 'rgba(0,0,0,0.35)';
+            c.beginPath();
+            c.ellipse(0, 0, w * 0.45, 10 * scale, 0, 0, Math.PI * 2);
+            c.fill();
+
+            // Rodas Traseiras
+            c.fillStyle = '#1e293b';
+            c.fillRect(-w * 0.5, -h * 0.35, w * 0.18, h * 0.35);
+            c.fillRect(w * 0.32, -h * 0.35, w * 0.18, h * 0.35);
+
+            // Carroceria
+            c.fillStyle = rival.color;
+            c.beginPath();
+            c.roundRect(-w * 0.35, -h * 0.65, w * 0.7, h * 0.45, 12 * scale);
+            c.fill();
+
+            // Spoiler Traseiro
+            c.fillStyle = '#0f172a';
+            c.fillRect(-w * 0.42, -h * 0.8, w * 0.84, 12 * scale);
+
+            // Piloto / Avatar
+            const avImg = rival.avatar ? avatars[rival.avatar] : null;
+            if (avImg && avImg.complete && avImg.naturalWidth > 0) {
+                const headSize = 52 * scale;
+                c.drawImage(avImg, -headSize / 2, -h * 1.15, headSize, headSize * 1.2);
+            } else {
+                c.fillStyle = '#ffffff';
+                c.font = `${Math.max(14, Math.round(26 * scale))}px "Fredoka"`;
+                c.textAlign = 'center';
+                c.fillText(rival.id === 'pinguim' ? '🐧' : '🏎️', 0, -h * 0.75);
+            }
+
+            c.restore();
+        }
+
+        // Desenho do Spider-Kart do Henrique (Kart do Jogador em 1ª/3ª Pessoa)
+        function drawHenriqueKart(c, width, height) {
+            const kartW = 280;
+            const kartH = 190;
+            const centerX = width / 2 + player.tilt * 22;
+            const centerY = height - 50;
+
+            c.save();
+            c.translate(centerX, centerY);
+
+            // Efeito de Rodopio se pegou banana
+            if (player.spinTimer > 0) {
+                c.rotate((Date.now() * 0.025) % (Math.PI * 2));
+            } else {
+                c.rotate(player.tilt * 0.06);
+            }
+
+            // Super Estrela: Brilho Arco-Íris Mágico
+            if (player.starTimer > 0) {
+                c.shadowColor = `hsl(${(Date.now() / 4) % 360}, 100%, 65%)`;
+                c.shadowBlur = 35;
+            }
+
+            // Sombra no Chão
+            c.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            c.beginPath();
+            c.ellipse(0, 25, kartW * 0.48, 18, 0, 0, Math.PI * 2);
+            c.fill();
+
+            // Fogo no Escapamento durante Turbo
+            if (player.boostTimer > 0) {
+                for (let i = 0; i < 4; i++) {
+                    spawnParticle(centerX - 60 + Math.random() * 120, centerY + 10, Math.random() > 0.5 ? '#f97316' : '#ef4444', 12, (Math.random() - 0.5) * 3, 4);
+                }
+            }
+
+            // 1. Rodas Traseiras Largas
+            c.fillStyle = '#0f172a';
+            c.beginPath();
+            c.roundRect(-kartW * 0.48, -45, 48, 85, 12);
+            c.roundRect(kartW * 0.48 - 48, -45, 48, 85, 12);
+            c.fill();
+            // Aros vermelhos do Homem-Aranha
+            c.strokeStyle = '#dc2626';
+            c.lineWidth = 4;
+            c.beginPath();
+            c.arc(-kartW * 0.48 + 24, -2, 14, 0, Math.PI * 2);
+            c.arc(kartW * 0.48 - 24, -2, 14, 0, Math.PI * 2);
+            c.stroke();
+
+            // 2. Chassis Principal Spider-Kart (Vermelho Vibrante & Azul Royal)
+            const chassisGrad = c.createLinearGradient(0, -90, 0, 30);
+            chassisGrad.addColorStop(0, '#ef4444');
+            chassisGrad.addColorStop(0.6, '#dc2626');
+            chassisGrad.addColorStop(1, '#1d4ed8');
+            c.fillStyle = chassisGrad;
+            c.beginPath();
+            c.roundRect(-kartW * 0.36, -70, kartW * 0.72, 85, 22);
+            c.fill();
+            c.strokeStyle = '#991b1b';
+            c.lineWidth = 4;
+            c.stroke();
+
+            // Teias estilizadas no capô traseiro
+            c.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(0, -70); c.lineTo(0, 15);
+            c.moveTo(-60, -40); c.lineTo(60, -40);
+            c.stroke();
+
+            // 3. Emblema da Aranha Negra no Kart
+            c.fillStyle = '#0f172a';
+            c.beginPath();
+            c.ellipse(0, -25, 10, 16, 0, 0, Math.PI * 2);
+            c.fill();
+            // Pernas da aranha
+            c.strokeStyle = '#0f172a';
+            c.lineWidth = 2.5;
+            c.beginPath();
+            c.moveTo(-8, -30); c.lineTo(-20, -36);
+            c.moveTo(-8, -22); c.lineTo(-22, -22);
+            c.moveTo(8, -30); c.lineTo(20, -36);
+            c.moveTo(8, -22); c.lineTo(22, -22);
+            c.stroke();
+
+            // 4. Aerofólio Traseiro Esportivo
+            c.fillStyle = '#1e3a8a';
+            c.beginPath();
+            c.roundRect(-kartW * 0.42, -95, kartW * 0.84, 18, 6);
+            c.fill();
+            c.fillStyle = '#ef4444';
+            c.fillRect(-kartW * 0.42, -95, kartW * 0.84, 4);
+
+            // 5. Escapamentos Duplos
+            c.fillStyle = '#64748b';
+            c.fillRect(-45, 10, 20, 16);
+            c.fillRect(25, 10, 20, 16);
+
+            // 6. Volante Esportivo
+            c.strokeStyle = '#0f172a';
+            c.lineWidth = 8;
+            c.beginPath();
+            c.arc(0, -55, 30, 0.2, Math.PI - 0.2);
+            c.stroke();
+
+            // 7. Henrique no Cockpit (Avatar Realista com Máscara / Rostinho)
+            const henriqueImg = avatars.henrique;
+            if (henriqueImg && henriqueImg.complete && henriqueImg.naturalWidth > 0) {
+                const headW = 105;
+                const headH = 125;
+                c.drawImage(henriqueImg, -headW / 2, -165, headW, headH);
+            } else {
+                // Fallback fofo
+                c.fillStyle = '#d49b72';
+                c.beginPath();
+                c.arc(0, -115, 34, 0, Math.PI * 2);
+                c.fill();
+                c.fillStyle = '#dc2626';
+                c.beginPath();
+                c.arc(0, -125, 36, Math.PI * 0.9, Math.PI * 2.1);
+                c.fill();
+            }
+
+            c.restore();
+        }
+
+        // Atualização da Lógica do Jogo
+        function update() {
+            // Aceleração e Velocidade do Jogador
+            const currentSegIdx = Math.floor(player.z / SEGMENT_LENGTH) % segments.length;
+            const currentSeg = segments[currentSegIdx];
+
+            // Efeito de Giro da Roleta de Item
+            if (player.rouletteTimer > 0) {
+                player.rouletteTimer--;
+                const randomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                itemEmojiEl.textContent = randomItem.emoji;
+                itemNameEl.textContent = randomItem.name;
+
+                if (player.rouletteTimer === 0) {
+                    player.item = randomItem.type;
+                    speak(randomItem.phrase);
+                }
+            }
+
+            // Timers
+            if (player.boostTimer > 0) player.boostTimer--;
+            if (player.starTimer > 0) player.starTimer--;
+            if (player.spinTimer > 0) player.spinTimer--;
+
+            // Velocidade Máxima Dinâmica
+            let targetMaxSpeed = player.maxSpeed;
+            if (player.boostTimer > 0) targetMaxSpeed *= 1.45;
+            if (player.spinTimer > 0) targetMaxSpeed = 1000;
+
+            // Aceleração / Frenagem
+            if (keys.gas) {
+                player.speed = Math.min(targetMaxSpeed, player.speed + player.accel);
+            } else if (keys.brake) {
+                player.speed = Math.max(0, player.speed - player.braking);
+            } else {
+                // Aceleração suave automática para crianças (ou desaceleração branda)
+                player.speed = Math.min(targetMaxSpeed * 0.75, Math.max(0, player.speed - player.decel * 0.3));
+            }
+
+            // Direção e Inclinação do Kart
+            if (keys.left) {
+                player.x -= 0.045;
+                player.tilt = Math.max(-1, player.tilt - 0.2);
+            } else if (keys.right) {
+                player.x += 0.045;
+                player.tilt = Math.min(1, player.tilt + 0.2);
+            } else {
+                player.tilt *= 0.75;
+            }
+
+            // Força Centrífuga da Curva
+            player.x -= (player.speed / player.maxSpeed) * currentSeg.curve * 0.007;
+
+            // Limite de Pista (Grama desacelera ligeiramente se não estiver com Estrela)
+            if (Math.abs(player.x) > 1.0) {
+                if (player.starTimer === 0) {
+                    player.speed = Math.min(player.speed, 3500);
+                }
+                player.x = Math.max(-1.8, Math.min(1.8, player.x));
+            }
+
+            // Avanço na Pista
+            const oldZ = player.z;
+            player.z += player.speed;
+
+            // Volta Completa!
+            if (player.z >= trackLength) {
+                player.z -= trackLength;
+                player.lap++;
+
+                if (player.lap === player.maxLaps) {
+                    // Alerta de Última Volta
+                    lapAlert.classList.remove('opacity-0');
+                    playSound('victory');
+                    speak("Atenção! Última volta!");
+                    setTimeout(() => lapAlert.classList.add('opacity-0'), 2500);
+                } else if (player.lap > player.maxLaps) {
+                    // Vitória!
+                    showVictory();
+                    return;
+                } else {
+                    playSound('star');
+                    speak(`Volta ${player.lap}! Continue acelerando Henrique!`);
+                }
+            }
+
+            // Interação com Caixas de Item [?]
+            if (currentSeg.hasItemBox && Math.abs(player.x) < 0.6) {
+                currentSeg.hasItemBox = false;
+                triggerItemRoulette();
+                setTimeout(() => currentSeg.hasItemBox = true, 5000);
+            }
+
+            // Painel Turbo na Pista
+            if (currentSeg.hasBoostPad && Math.abs(player.x) < 0.6) {
+                player.boostTimer = 75;
+                playSound('turbo');
+            }
+
+            // Banana na Pista
+            if (currentSeg.hasBanana && Math.abs(player.x - currentSeg.bananaX) < 0.35) {
+                if (player.starTimer === 0) {
+                    currentSeg.hasBanana = false;
+                    player.spinTimer = 45;
+                    player.speed *= 0.4;
+                    playSound('banana_slip');
+                    speak("Cuidado com a casca de banana!");
+                }
+            }
+
+            // Atualização dos Rivais (IA)
+            rivals.forEach((rival, idx) => {
+                if (rival.spinTimer > 0) {
+                    rival.spinTimer--;
+                    rival.speed = 2000;
+                } else {
+                    rival.speed = 6800 + idx * 250;
+                }
+
+                rival.z += rival.speed;
+                if (rival.z >= trackLength) {
+                    rival.z -= trackLength;
+                    rival.lap++;
+                }
+
+                // Desvio suave
+                rival.x += Math.sin(Date.now() * 0.002 + idx) * 0.005;
+
+                // Rivais pegam banana
+                const rSegIdx = Math.floor(rival.z / SEGMENT_LENGTH) % segments.length;
+                const rSeg = segments[rSegIdx];
+                if (rSeg.hasBanana && Math.abs(rival.x - rSeg.bananaX) < 0.4) {
+                    rSeg.hasBanana = false;
+                    rival.spinTimer = 50;
+                    playSound('banana_slip');
+                }
+            });
+
+            // Cálculo da Posição na Corrida (1º, 2º, 3º, etc.)
+            let aheadCount = 0;
+            const playerTotalDist = player.lap * trackLength + player.z;
+            rivals.forEach(r => {
+                const rivalTotalDist = r.lap * trackLength + r.z;
+                if (rivalTotalDist > playerTotalDist) aheadCount++;
+            });
+
+            const currentPos = aheadCount + 1;
+            posDisplay.textContent = `${currentPos}º`;
+            posDisplay.className = currentPos === 1 
+                ? "text-2xl sm:text-3xl text-yellow-300 font-black leading-none drop-shadow" 
+                : "text-2xl sm:text-3xl text-white font-black leading-none drop-shadow";
+
+            lapDisplay.textContent = `${Math.min(player.lap, player.maxLaps)}/${player.maxLaps}`;
+            speedDisplay.textContent = `${Math.round(player.speed / 75)} km/h`;
+
+            // Atualização das Partículas
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+            });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        // Renderização Completa do Jogo
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const currentTrack = TRACKS[currentTrackIndex];
+
+            // 1. Céu e Horizonte Temático
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.5);
+            skyGrad.addColorStop(0, currentTrack.skyTop);
+            skyGrad.addColorStop(1, currentTrack.skyBottom);
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.5);
+
+            // Elementos de Céu
+            if (currentTrack.theme === 'space') {
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 50; i++) {
+                    const sx = (i * 97) % canvas.width;
+                    const sy = (i * 43) % (canvas.height * 0.48);
+                    ctx.fillRect(sx, sy, 2.5, 2.5);
+                }
+            } else if (currentTrack.theme === 'beach') {
+                ctx.fillStyle = '#fdba74';
+                ctx.beginPath();
+                ctx.arc(canvas.width * 0.5, canvas.height * 0.35, 75, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 2. Projeção e Renderização da Pista 3D
+            const baseSegment = segments[Math.floor(player.z / SEGMENT_LENGTH) % segments.length];
+            const basePercent = (player.z % SEGMENT_LENGTH) / SEGMENT_LENGTH;
+            const startPos = Math.floor(player.z / SEGMENT_LENGTH);
+
+            let x = 0;
+            let dx = -(baseSegment.curve * basePercent);
+
+            let maxY = canvas.height;
+
+            // Projeta os segmentos visíveis
+            for (let n = 0; n < DRAW_DISTANCE; n++) {
+                const seg = segments[(startPos + n) % segments.length];
+                const looped = (startPos + n) >= segments.length;
+                const cameraZ = player.z - (looped ? trackLength : 0);
+
+                project(seg.p1, player.x * ROAD_WIDTH - x, CAMERA_HEIGHT, cameraZ, CAMERA_DEPTH, canvas.width, canvas.height, ROAD_WIDTH);
+                project(seg.p2, player.x * ROAD_WIDTH - x - dx, CAMERA_HEIGHT, cameraZ, CAMERA_DEPTH, canvas.width, canvas.height, ROAD_WIDTH);
+
+                x += dx;
+                dx += seg.curve;
+
+                // Não desenha se estiver atrás ou oculto por colina
+                if (seg.p1.camera.z <= CAMERA_DEPTH || seg.p2.screen.y >= maxY) continue;
+
+                // Grama Lateral
+                const grassColor = Math.floor(seg.index / 3) % 2 === 0 ? currentTrack.grassDark : currentTrack.grassLight;
+                ctx.fillStyle = grassColor;
+                ctx.fillRect(0, seg.p2.screen.y, canvas.width, seg.p1.screen.y - seg.p2.screen.y);
+
+                // Meio-Fio (Zebra Vermelha/Branca)
+                const curbColor = Math.floor(seg.index / 3) % 2 === 0 ? currentTrack.curbDark : currentTrack.curbLight;
+                drawPolygon(ctx, 
+                    seg.p1.screen.x - seg.p1.screen.w * 1.15, seg.p1.screen.y,
+                    seg.p1.screen.x - seg.p1.screen.w, seg.p1.screen.y,
+                    seg.p2.screen.x - seg.p2.screen.w, seg.p2.screen.y,
+                    seg.p2.screen.x - seg.p2.screen.w * 1.15, seg.p2.screen.y,
+                    curbColor
+                );
+                drawPolygon(ctx, 
+                    seg.p1.screen.x + seg.p1.screen.w, seg.p1.screen.y,
+                    seg.p1.screen.x + seg.p1.screen.w * 1.15, seg.p1.screen.y,
+                    seg.p2.screen.x + seg.p2.screen.w * 1.15, seg.p2.screen.y,
+                    seg.p2.screen.x + seg.p2.screen.w, seg.p2.screen.y,
+                    curbColor
+                );
+
+                // Asfalto da Estrada
+                const roadColor = Math.floor(seg.index / 3) % 2 === 0 ? currentTrack.roadDark : currentTrack.roadLight;
+                drawPolygon(ctx,
+                    seg.p1.screen.x - seg.p1.screen.w, seg.p1.screen.y,
+                    seg.p1.screen.x + seg.p1.screen.w, seg.p1.screen.y,
+                    seg.p2.screen.x + seg.p2.screen.w, seg.p2.screen.y,
+                    seg.p2.screen.x - seg.p2.screen.w, seg.p2.screen.y,
+                    roadColor
+                );
+
+                // Faixas Brancas Divisórias
+                if (Math.floor(seg.index / 3) % 2 === 0) {
+                    drawPolygon(ctx,
+                        seg.p1.screen.x - seg.p1.screen.w * 0.02, seg.p1.screen.y,
+                        seg.p1.screen.x + seg.p1.screen.w * 0.02, seg.p1.screen.y,
+                        seg.p2.screen.x + seg.p2.screen.w * 0.02, seg.p2.screen.y,
+                        seg.p2.screen.x - seg.p2.screen.w * 0.02, seg.p2.screen.y,
+                        '#ffffff'
+                    );
+                }
+
+                // Painel Turbo na Pista
+                if (seg.hasBoostPad) {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(seg.p1.screen.x - seg.p1.screen.w * 0.35, seg.p2.screen.y, seg.p1.screen.w * 0.7, seg.p1.screen.y - seg.p2.screen.y);
+                }
+
+                // Caixas de Item [?] Flutuantes
+                if (seg.hasItemBox) {
+                    const boxScale = seg.p1.screen.scale * 1.8;
+                    const bX = seg.p1.screen.x;
+                    const bY = seg.p1.screen.y - 70 * boxScale;
+                    ctx.font = `${Math.max(14, Math.round(36 * boxScale))}px "Fredoka"`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🎁', bX, bY);
+                }
+
+                // Banana na Pista
+                if (seg.hasBanana) {
+                    const banScale = seg.p1.screen.scale * 1.6;
+                    const bX = seg.p1.screen.x + seg.bananaX * seg.p1.screen.w;
+                    ctx.font = `${Math.max(12, Math.round(30 * banScale))}px "Fredoka"`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('🍌', bX, seg.p1.screen.y);
+                }
+
+                // Decoração de Beira de Pista
+                seg.sprites.forEach(sp => {
+                    const destX = seg.p1.screen.x + sp.x * seg.p1.screen.w;
+                    drawSprite(ctx, canvas.width, canvas.height, sp, seg.p1.screen.scale, destX, seg.p1.screen.y, currentTrack.theme);
+                });
+
+                // Rivais presentes no segmento
+                rivals.forEach(r => {
+                    const rSegIdx = Math.floor(r.z / SEGMENT_LENGTH);
+                    if (rSegIdx === seg.index) {
+                        const rDestX = seg.p1.screen.x + r.x * seg.p1.screen.w;
+                        drawRivalKart(ctx, r, seg.p1.screen.scale, rDestX, seg.p1.screen.y);
+                    }
+                });
+
+                maxY = seg.p1.screen.y;
+            }
+
+            // 3. Renderização do Kart do Henrique (Primeiro Plano)
+            drawHenriqueKart(ctx, canvas.width, canvas.height);
+
+            // 4. Partículas
+            particles.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 5. Renderização do Minimapa Radar
+            renderMinimap();
+        }
+
+        // Minimapa Radar Circular
+        function renderMinimap() {
+            miniCtx.clearRect(0, 0, miniCanvas.width, miniCanvas.height);
+
+            const mCenter = 60;
+            const mRadius = 45;
+
+            // Circuito Oval
+            miniCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+            miniCtx.lineWidth = 8;
+            miniCtx.beginPath();
+            miniCtx.ellipse(mCenter, mCenter, mRadius, mRadius * 0.75, 0, 0, Math.PI * 2);
+            miniCtx.stroke();
+
+            // Posição dos Rivais no Radar
+            rivals.forEach(r => {
+                const angle = (r.z / trackLength) * Math.PI * 2 - Math.PI / 2;
+                const rx = mCenter + Math.cos(angle) * mRadius;
+                const ry = mCenter + Math.sin(angle) * (mRadius * 0.75);
+
+                miniCtx.fillStyle = r.color;
+                miniCtx.beginPath();
+                miniCtx.arc(rx, ry, 5, 0, Math.PI * 2);
+                miniCtx.fill();
+                miniCtx.strokeStyle = '#ffffff';
+                miniCtx.lineWidth = 1.5;
+                miniCtx.stroke();
+            });
+
+            // Posição do Henrique (Ponto Dourado/Vermelho em Destaque)
+            const pAngle = (player.z / trackLength) * Math.PI * 2 - Math.PI / 2;
+            const px = mCenter + Math.cos(pAngle) * mRadius;
+            const py = mCenter + Math.sin(pAngle) * (mRadius * 0.75);
+
+            miniCtx.fillStyle = '#ef4444';
+            miniCtx.beginPath();
+            miniCtx.arc(px, py, 7.5, 0, Math.PI * 2);
+            miniCtx.fill();
+            miniCtx.strokeStyle = '#facc15';
+            miniCtx.lineWidth = 2.5;
+            miniCtx.stroke();
+        }
+
+        // Vitória e Celebração do Pódio
+        function showVictory() {
+            playSound('victory');
+            speak("Parabéns Henrique! Você é o grande campeão da corrida!");
+            victoryModal.classList.remove('hidden-screen');
+        }
+
+        function restartRace() {
+            victoryModal.classList.add('hidden-screen');
+            player.z = 0;
+            player.x = 0;
+            player.speed = 0;
+            player.lap = 1;
+            player.item = null;
+            rivals.forEach((r, idx) => {
+                r.z = 80 + idx * 40;
+                r.lap = 1;
+                r.spinTimer = 0;
+            });
+            buildTrack(currentTrackIndex);
+            speak("3... 2... 1... Vai Henrique!");
+        }
+
+        function openTrackSelector() {
+            trackModal.classList.remove('hidden-screen');
+        }
+
+        function closeTrackSelector() {
+            trackModal.classList.add('hidden-screen');
+        }
+
+        function changeTrack(idx) {
+            currentTrackIndex = idx;
+            trackNameBtn.textContent = TRACKS[currentTrackIndex].name.split(' ')[1] || TRACKS[currentTrackIndex].name;
+            closeTrackSelector();
+            restartRace();
+        }
+
+        // Loop Principal do Jogo
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            buildTrack(0);
+            requestAnimationFrame(gameLoop);
+            speak("Bem-vindo ao Mario Kart do Henrique! Toque no acelerador verde para acelerar!");
+        });
+    </script>
+</body>
+</html>
