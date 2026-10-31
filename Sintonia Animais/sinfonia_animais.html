@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sinfonia de Sons</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(180deg, #dcfce7 0%, #dbeafe 50%, #fef3c7 100%);
+            min-height: 100dvh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Botão do Som 3D */
+        .sound-card {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 8px 0 var(--border-color), 0 14px 20px rgba(0,0,0,0.12);
+            border-bottom: 7px solid var(--border-color);
+        }
+
+        .sound-card:active {
+            transform: translateY(5px);
+            box-shadow: 0 3px 0 var(--border-color);
+        }
+
+        /* Animação de Dancinha ao tocar */
+        @keyframes itemDance {
+            0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+            25% { transform: translateY(-16px) scale(1.12) rotate(-5deg); }
+            50% { transform: translateY(0) scale(1.06) rotate(5deg); }
+            75% { transform: translateY(-8px) scale(1.08) rotate(-2deg); }
+        }
+        .anim-dance {
+            animation: itemDance 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Animação de Erro (Shake) */
+        @keyframes shakeItem {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-7px); }
+            80% { transform: translateX(7px); }
+        }
+        .anim-shake {
+            animation: shakeItem 0.4s ease-in-out;
+        }
+
+        /* Nota musical flutuante subindo */
+        @keyframes noteFloat {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--tx)), -110px) scale(1.5) rotate(var(--rot)); opacity: 0; }
+        }
+        .floating-note {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            animation: noteFloat 1.2s ease-out forwards;
+        }
+
+        /* Barra de categorias com rolagem horizontal suave */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-[100dvh] w-screen flex flex-col justify-between items-center relative p-2 sm:p-4">
+
+    <!-- Tela Inicial -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-emerald-100/95 z-50 p-6 text-center">
+        <a href="index.html" class="absolute top-4 left-4 px-4 py-2 bg-white text-emerald-800 text-lg rounded-2xl shadow border-2 border-emerald-300 flex items-center gap-1 font-bold">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="text-8xl mb-3 animate-bounce">🎶🚗🦖</div>
+        <h1 class="text-4xl sm:text-6xl font-black text-emerald-700 mb-2 drop-shadow-md">
+            Sinfonia de Sons!
+        </h1>
+        <p class="text-base sm:text-xl text-emerald-900 font-semibold mb-6 max-w-md">
+            Descubra os sons de animais, carros, dinossauros, passarinhos e instrumentos!
+        </p>
+        <button onclick="startGame()" class="bg-amber-400 hover:bg-amber-300 text-amber-950 text-2xl sm:text-3xl font-black py-4 px-12 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95">
+            COMEÇAR!
+        </button>
+    </div>
+
+    <!-- Barra Superior (Menu + Modo + Repetir) -->
+    <header class="w-full max-w-2xl px-2 pt-1 flex justify-between items-center z-20 flex-none">
+        <a href="index.html" class="px-3.5 py-1.5 bg-white/90 hover:bg-white text-emerald-800 text-sm sm:text-base rounded-2xl shadow-md border-2 border-emerald-200 flex items-center gap-1 font-bold active:scale-95">
+            🏠 <span>Menu</span>
+        </a>
+
+        <!-- Botão de Alternar Modo -->
+        <div class="flex gap-1.5 bg-white/80 backdrop-blur-sm p-1 rounded-2xl shadow border border-emerald-200">
+            <button onclick="setGameMode('free')" id="btn-mode-free" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-emerald-600 text-white shadow">
+                🎵 Som Livre
+            </button>
+            <button onclick="setGameMode('quiz')" id="btn-mode-quiz" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-emerald-800 hover:bg-emerald-100">
+                ❓ Adivinhar
+            </button>
+        </div>
+
+        <button onclick="repeatSound()" title="Ouvir novamente" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-lg rounded-2xl shadow-md flex items-center gap-1 active:scale-95 font-bold">
+            🔊
+        </button>
+    </header>
+
+    <!-- Barra de Abas / Categorias (Animais, Veículos, Instrumentos, Selvagens, Dinos, Pássaros) -->
+    <nav class="w-full max-w-2xl px-2 my-1 z-20 flex-none">
+        <div class="flex gap-2 overflow-x-auto no-scrollbar py-1 px-1" id="category-tabs">
+            <!-- Abas injetadas via JS -->
+        </div>
+    </nav>
+
+    <!-- Barra de Instrução / Pergunta -->
+    <div id="instruction-bar" class="w-full max-w-xl text-center my-0.5 z-20 flex-none px-2">
+        <div class="bg-white/85 backdrop-blur-sm py-1.5 px-4 rounded-2xl shadow-sm border border-emerald-300 inline-block">
+            <span id="instruction-text" class="text-xs sm:text-base font-bold text-emerald-950">
+                Toque nos itens para ouvir o som! 🎶
+            </span>
+        </div>
+    </div>
+
+    <!-- Grade Central dos Itens (Responsiva para caber em qualquer celular) -->
+    <main class="flex-1 w-full max-w-xl flex items-center justify-center p-2 min-h-0">
+        <div id="sounds-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4 w-full max-h-[65vh]">
+            <!-- Cards de sons injetados via JS -->
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="flex-none pb-[max(6px,env(safe-area-inset-bottom))] text-center">
+        <span class="text-xs sm:text-sm text-emerald-900/80 font-bold">
+            Mude de categoria na barra acima para explorar mais sons! ✨
+        </span>
+    </footer>
+
+    <script>
+        /**
+         * LÓGICA DA MEGA SINFONIA DE SONS
+         */
+
+        const CATEGORIES = [
+            {
+                id: "animais",
+                name: "Fazenda",
+                emoji: "🐮",
+                color: "bg-amber-500",
+                items: [
+                    { name: "Vaca", emoji: "🐮", sound: "Muuu!", phrase: "A Vaquinha faz: Muuuu!", freq: 196, color: "bg-amber-100", border: "#d97706" },
+                    { name: "Cachorro", emoji: "🐶", sound: "Au au!", phrase: "O Cachorrinho faz: Au au!", freq: 330, color: "bg-sky-100", border: "#0284c7" },
+                    { name: "Gato", emoji: "🐱", sound: "Miau!", phrase: "O Gatinho faz: Miau!", freq: 523, color: "bg-orange-100", border: "#ea580c" },
+                    { name: "Porco", emoji: "🐷", sound: "Oinc oinc!", phrase: "O Porquinho faz: Oinc oinc!", freq: 262, color: "bg-pink-100", border: "#db2777" },
+                    { name: "Pintinho", emoji: "🐥", sound: "Piu piu!", phrase: "O Pintinho faz: Piu piu!", freq: 659, color: "bg-yellow-100", border: "#ca8a04" },
+                    { name: "Ovelha", emoji: "🐑", sound: "Bééé!", phrase: "A Ovelhinha faz: Bééé!", freq: 392, color: "bg-emerald-100", border: "#059669" }
+                ]
+            },
+            {
+                id: "selvagens",
+                name: "Selvagens",
+                emoji: "🦁",
+                color: "bg-orange-500",
+                items: [
+                    { name: "Leão", emoji: "🦁", sound: "Roaaar!", phrase: "O Leão ruge forte: Roaaar!", freq: 164, color: "bg-amber-100", border: "#b45309" },
+                    { name: "Elefante", emoji: "🐘", sound: "Fuuuump!", phrase: "O Elefante faz barulho com a tromba: Fuuuump!", freq: 220, color: "bg-slate-100", border: "#475569" },
+                    { name: "Macaco", emoji: "🐒", sound: "Uhh uhh ahh ahh!", phrase: "O Macaquinho pula e faz: Uhh uhh ahh ahh!", freq: 440, color: "bg-yellow-100", border: "#d97706" },
+                    { name: "Lobo", emoji: "🐺", sound: "Auuuu!", phrase: "O Lobo uiva para a lua: Auuuu!", freq: 349, color: "bg-indigo-100", border: "#4338ca" },
+                    { name: "Urso", emoji: "🐻", sound: "Grrrr!", phrase: "O Urso grande faz: Grrrr!", freq: 146, color: "bg-stone-100", border: "#78716c" },
+                    { name: "Cobra", emoji: "🐍", sound: "Sssss!", phrase: "A Cobrinha rasteja e faz: Sssss!", freq: 587, color: "bg-emerald-100", border: "#047857" }
+                ]
+            },
+            {
+                id: "veiculos",
+                name: "Veículos",
+                emoji: "🚗",
+                color: "bg-blue-500",
+                items: [
+                    { name: "Carro", emoji: "🚗", sound: "Vruum vruum!", phrase: "O Carro acelera: Vruum vruum!", freq: 246, color: "bg-red-100", border: "#dc2626" },
+                    { name: "Trem", emoji: "🚂", sound: "Tchuu tchuu!", phrase: "O Trenzinho no trilho: Tchuu tchuu!", freq: 293, color: "bg-slate-100", border: "#334155" },
+                    { name: "Avião", emoji: "✈️", sound: "Fshhh voando!", phrase: "O Avião voa alto no céu: Fshhhh!", freq: 493, color: "bg-sky-100", border: "#0284c7" },
+                    { name: "Ambulância", emoji: "🚑", sound: "Uii-uoo-uii-uoo!", phrase: "A Sirene toca: Uii-uoo, uii-uoo!", freq: 587, color: "bg-rose-100", border: "#e11d48" },
+                    { name: "Barco", emoji: "🚢", sound: "Fon-foooon!", phrase: "A buzina do Navio: Fon-fooon!", freq: 130, color: "bg-cyan-100", border: "#0891b2" },
+                    { name: "Foguete", emoji: "🚀", sound: "3, 2, 1... Fogo!", phrase: "O Foguete vai pro espaço: 3, 2, 1, decolar!", freq: 698, color: "bg-violet-100", border: "#7c3aed" }
+                ]
+            },
+            {
+                id: "dinossauros",
+                name: "Dinos",
+                emoji: "🦖",
+                color: "bg-lime-600",
+                items: [
+                    { name: "T-Rex", emoji: "🦖", sound: "Groaaar gigante!", phrase: "O Tiranossauro Rex: Groaaar!", freq: 110, color: "bg-lime-100", border: "#65a30d" },
+                    { name: "Tricerátops", emoji: "🦏", sound: "Stomp stomp!", phrase: "O Tricerátops pisando forte: Stomp stomp!", freq: 174, color: "bg-emerald-100", border: "#059669" },
+                    { name: "Pterodáctilo", emoji: "🦅", sound: "Screeech!", phrase: "O Pterodáctilo voa dando rasante: Screeech!", freq: 659, color: "bg-teal-100", border: "#0d9488" },
+                    { name: "Pescoçudo", emoji: "🦕", sound: "Uoooon!", phrase: "O Braquiossauro gigante: Uoooon!", freq: 130, color: "bg-sky-100", border: "#0369a1" },
+                    { name: "Bebê Dino", emoji: "🐣", sound: "Piu-roar!", phrase: "O Bebê Dino quebrando o ovo: Piu-roar!", freq: 440, color: "bg-amber-100", border: "#d97706" },
+                    { name: "Espinossauro", emoji: "🐊", sound: "Craaash!", phrase: "O Espinossauro na água: Craaash!", freq: 146, color: "bg-green-100", border: "#15803d" }
+                ]
+            },
+            {
+                id: "passaros",
+                name: "Pássaros",
+                emoji: "🦜",
+                color: "bg-teal-500",
+                items: [
+                    { name: "Papagaio", emoji: "🦜", sound: "Curupaco louro!", phrase: "O Papagaio fala: Curupaco, louro quer biscoito!", freq: 523, color: "bg-emerald-100", border: "#059669" },
+                    { name: "Coruja", emoji: "🦉", sound: "Uhuuu-uhuuu!", phrase: "A Corujinha sábia: Uhuuu, uhuuu!", freq: 261, color: "bg-amber-100", border: "#b45309" },
+                    { name: "Pato", emoji: "🦆", sound: "Quá quá!", phrase: "O Patinho na lagoa: Quá quá quá!", freq: 349, color: "bg-yellow-100", border: "#ca8a04" },
+                    { name: "Galo", emoji: "🐓", sound: "Cocoricóóó!", phrase: "O Galo acorda o sítio: Cocoricóóó!", freq: 440, color: "bg-red-100", border: "#dc2626" },
+                    { name: "Passarinho", emoji: "🐦", sound: "Tsiu-tsiu-fiiiu!", phrase: "O Passarinho cantando: Tsiu tsiu fiiiu!", freq: 783, color: "bg-sky-100", border: "#0284c7" },
+                    { name: "Tucano", emoji: "🦤", sound: "Tuc-tuc-tuc!", phrase: "O Tucano com seu bicão: Tuc-tuc-tuc!", freq: 392, color: "bg-orange-100", border: "#ea580c" }
+                ]
+            },
+            {
+                id: "instrumentos",
+                name: "Música",
+                emoji: "🎸",
+                color: "bg-purple-500",
+                items: [
+                    { name: "Violão", emoji: "🎸", sound: "Dlim-dlim!", phrase: "O Violão afinado: Dlim-dlim, dlam-dlam!", freq: 329, color: "bg-amber-100", border: "#d97706" },
+                    { name: "Bateria", emoji: "🥁", sound: "Tum-dum-tá!", phrase: "A Bateria com ritmo: Tum, dum, tá!", freq: 130, color: "bg-rose-100", border: "#e11d48" },
+                    { name: "Trompete", emoji: "🎺", sound: "Pá-pá-rá!", phrase: "O Trompete alegre: Pá-pá-rá!", freq: 523, color: "bg-yellow-100", border: "#eab308" },
+                    { name: "Piano", emoji: "🎹", sound: "Plim-plim-plim!", phrase: "As teclas do Piano: Plim-plim-plim!", freq: 440, color: "bg-slate-100", border: "#334155" },
+                    { name: "Flauta", emoji: "🪈", sound: "Fiiiu-fiiiu!", phrase: "A Flauta doce: Fiiiu-fiiiu!", freq: 659, color: "bg-teal-100", border: "#0d9488" },
+                    { name: "Xilofone", emoji: "🔔", sound: "Tlim-tlam-tlum!", phrase: "O Xilofone brilhante: Tlim, tlam, tlum!", freq: 880, color: "bg-purple-100", border: "#9333ea" }
+                ]
+            }
+        ];
+
+        let currentCatIndex = 0;
+        let gameMode = 'free'; // 'free' | 'quiz'
+        let targetItem = null;
+        let audioCtx = null;
+
+        // Elementos DOM
+        const startScreen = document.getElementById('start-screen');
+        const categoryTabs = document.getElementById('category-tabs');
+        const soundsGrid = document.getElementById('sounds-grid');
+        const instructionText = document.getElementById('instruction-text');
+        const btnModeFree = document.getElementById('btn-mode-free');
+        const btnModeQuiz = document.getElementById('btn-mode-quiz');
+
+        // --- SÍNTESE DE VOZ ---
+        function speakText(text, rate = 0.9, pitch = 1.25) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // --- SISTEMA DE SOM SINTÉTICO ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSoundTone(baseFreq) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const notes = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                gain.gain.setValueAtTime(0.28, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.25);
+
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.25);
+            });
+        }
+
+        // --- NOTAS FLUTUANTES ---
+        function spawnNotes(targetEl) {
+            const rect = targetEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            const icons = ['🎵', '🎶', '⭐', '✨', '🎈'];
+            for (let i = 0; i < 4; i++) {
+                const note = document.createElement('div');
+                note.className = 'floating-note text-3xl sm:text-4xl';
+                note.textContent = icons[Math.floor(Math.random() * icons.length)];
+                note.style.left = `${cx}px`;
+                note.style.top = `${cy}px`;
+                
+                const tx = (Math.random() * 90 - 45) + 'px';
+                const rot = (Math.random() * 50 - 25) + 'deg';
+                note.style.setProperty('--tx', tx);
+                note.style.setProperty('--rot', rot);
+                document.body.appendChild(note);
+
+                setTimeout(() => note.remove(), 1200);
+            }
+        }
+
+        // --- RENDERIZAÇÃO DAS ABAS DE CATEGORIA ---
+        function renderCategoryTabs() {
+            categoryTabs.innerHTML = '';
+            CATEGORIES.forEach((cat, index) => {
+                const btn = document.createElement('button');
+                const isActive = index === currentCatIndex;
+                btn.className = `px-3 py-1.5 rounded-2xl text-xs sm:text-sm font-black whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                    isActive ? `${cat.color} text-white shadow-md scale-105 border-2 border-white` : 'bg-white/80 text-slate-700 hover:bg-white'
+                }`;
+                btn.innerHTML = `<span>${cat.emoji}</span> <span>${cat.name}</span>`;
+                btn.onclick = () => selectCategory(index);
+                categoryTabs.appendChild(btn);
+            });
+        }
+
+        function selectCategory(index) {
+            currentCatIndex = index;
+            renderCategoryTabs();
+            renderGrid();
+
+            const cat = CATEGORIES[currentCatIndex];
+            if (gameMode === 'free') {
+                speakText(`Categoria: ${cat.name}!`);
+            } else {
+                nextQuizQuestion();
+            }
+        }
+
+        // --- RENDERIZAÇÃO DO GRID DE SONS ---
+        function renderGrid() {
+            soundsGrid.innerHTML = '';
+            const cat = CATEGORIES[currentCatIndex];
+
+            cat.items.forEach(item => {
+                const card = document.createElement('button');
+                card.className = `sound-card ${item.color} rounded-3xl p-2 sm:p-4 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-transform aspect-[4/5] sm:aspect-square`;
+                card.style.setProperty('--border-color', item.border);
+                
+                card.innerHTML = `
+                    <span class="text-5xl sm:text-7xl drop-shadow mb-1 transition-transform pointer-events-none">${item.emoji}</span>
+                    <span class="text-sm sm:text-base font-black text-slate-800 tracking-wide">${item.name}</span>
+                    <span class="text-[11px] sm:text-xs font-bold text-slate-600 uppercase mt-0.5">${item.sound}</span>
+                `;
+
+                card.onclick = () => handleItemClick(item, card);
+                soundsGrid.appendChild(card);
+            });
+        }
+
+        // --- INTERAÇÃO COM O ITEM ---
+        function handleItemClick(item, cardEl) {
+            if (gameMode === 'free') {
+                playSoundTone(item.freq);
+                spawnNotes(cardEl);
+                cardEl.classList.remove('anim-dance');
+                void cardEl.offsetWidth;
+                cardEl.classList.add('anim-dance');
+
+                speakText(item.phrase);
+                return;
+            }
+
+            // Modo Quiz
+            if (gameMode === 'quiz') {
+                if (!targetItem) return;
+
+                if (item.name === targetItem.name) {
+                    // ACERTOU!
+                    playSoundTone(item.freq);
+                    spawnNotes(cardEl);
+                    cardEl.classList.remove('anim-dance');
+                    void cardEl.offsetWidth;
+                    cardEl.classList.add('anim-dance');
+
+                    speakText(`Muito bem! O som de ${targetItem.sound} é do ${targetItem.name}!`);
+                    instructionText.textContent = `🌟 Acertou! ${targetItem.name}: ${targetItem.sound}`;
+
+                    setTimeout(nextQuizQuestion, 2200);
+                } else {
+                    // ERROU!
+                    cardEl.classList.remove('anim-shake');
+                    void cardEl.offsetWidth;
+                    cardEl.classList.add('anim-shake');
+
+                    speakText(`Esse é o ${item.name}. Procure quem faz ${targetItem.sound}!`);
+                }
+            }
+        }
+
+        // --- MODOS DE JOGO ---
+        function setGameMode(mode) {
+            gameMode = mode;
+            if (mode === 'free') {
+                btnModeFree.className = "px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-emerald-600 text-white shadow";
+                btnModeQuiz.className = "px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-emerald-800 hover:bg-emerald-100";
+                instructionText.textContent = "Toque nos itens para ouvir o som! 🎶";
+                speakText("Modo Som Livre! Toque em qualquer um para ouvir!");
+            } else {
+                btnModeFree.className = "px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-emerald-800 hover:bg-emerald-100";
+                btnModeQuiz.className = "px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-purple-600 text-white shadow";
+                speakText("Modo Adivinhação! Vamos descobrir quem faz cada som!");
+                setTimeout(nextQuizQuestion, 1200);
+            }
+        }
+
+        function nextQuizQuestion() {
+            const cat = CATEGORIES[currentCatIndex];
+            targetItem = cat.items[Math.floor(Math.random() * cat.items.length)];
+            instructionText.textContent = `Quem faz: "${targetItem.sound}"? 🤔`;
+            speakText(`Quem faz ${targetItem.sound}?`);
+        }
+
+        function repeatSound() {
+            if (gameMode === 'quiz' && targetItem) {
+                speakText(`Quem faz ${targetItem.sound}?`);
+            } else {
+                speakText("Toque nos itens para ouvir cada som!");
+            }
+        }
+
+        // --- INICIALIZAÇÃO ---
+        function startGame() {
+            initAudio();
+            startScreen.classList.add('hidden-screen');
+            renderCategoryTabs();
+            renderGrid();
+            speakText("Bem-vindo à Sinfonia de Sons! Escolha uma categoria lá em cima e divirta-se!");
+        }
+    </script>
+</body>
+</html>
