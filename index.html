@@ -2,47 +2,80 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Painel de Jogos Educativos</title>
+
+<!-- Suporte a PWA (Instalação no Android / Chrome / iOS) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff5a5f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jogos Kids">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:"Comic Sans MS","Trebuchet MS",sans-serif;background:linear-gradient(160deg,#a1e3ff,#ffe8a1 60%,#ffc4e1);min-height:100vh;color:#333}
-  header{text-align:center;padding:28px 12px 8px}
-  h1{margin:0;font-size:clamp(2rem,6vw,3.5rem);color:#ff5a5f;text-shadow:3px 3px 0 #fff}
-  header p{font-size:1.2rem;margin:8px 0 0}
-  .grid{max-width:1000px;margin:24px auto;padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
-  .card{background:#fff;border-radius:28px;padding:22px 16px;text-align:center;text-decoration:none;color:inherit;box-shadow:0 8px 0 rgba(0,0,0,.15);transition:transform .15s;position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;border:5px solid var(--c)}
+  header{text-align:center;padding:24px 12px 6px}
+  h1{margin:0;font-size:clamp(1.8rem,5vw,3rem);color:#ff5a5f;text-shadow:3px 3px 0 #fff}
+  header p{font-size:1.1rem;margin:6px 0 0}
+  
+  /* Botão de Instalação PWA */
+  #install-btn {
+    display: none;
+    margin: 12px auto 0;
+    background: #ff5a5f;
+    color: white;
+    font-size: 1.05rem;
+    font-weight: bold;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 30px;
+    box-shadow: 0 6px 0 #d9383d, 0 10px 20px rgba(0,0,0,0.15);
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s;
+  }
+  #install-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #d9383d;
+  }
+
+  .grid{max-width:1000px;margin:20px auto;padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px}
+  .card{background:#fff;border-radius:28px;padding:20px 14px;text-align:center;text-decoration:none;color:inherit;box-shadow:0 8px 0 rgba(0,0,0,.15);transition:transform .15s;position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;border:5px solid var(--c)}
   .card:hover,.card:focus{transform:translateY(-6px) rotate(-1deg);outline:none}
   .card:active{transform:translateY(2px)}
-  .emoji{font-size:4.5rem;line-height:1}
-  .card h2{margin:0;font-size:1.4rem;color:var(--c)}
-  .card small{font-size:1rem}
-  .tag{background:var(--c);color:#fff;border-radius:20px;padding:4px 12px;font-size:.85rem;font-weight:bold}
+  .emoji{font-size:4.2rem;line-height:1}
+  .card h2{margin:0;font-size:1.35rem;color:var(--c)}
+  .card small{font-size:0.95rem}
+  .tag{background:var(--c);color:#fff;border-radius:20px;padding:4px 14px;font-size:.85rem;font-weight:bold}
   .soon{filter:grayscale(.9);opacity:.6;cursor:not-allowed;border-style:dashed}
   .soon:hover{transform:none}
-  footer{text-align:center;padding-bottom:20px;font-size:.9rem;opacity:.7}
+  footer{text-align:center;padding-bottom:20px;font-size:.85rem;opacity:.7}
 </style>
 </head>
 <body>
 <header>
   <h1>🎮 Cantinho dos Jogos 🌈</h1>
   <p>Escolha um jogo e vamos aprender brincando!</p>
+  <button id="install-btn">📲 Instalar Aplicativo no Celular</button>
 </header>
 
 <main class="grid" id="grid"></main>
-<footer>Para adicionar um jogo, inclua uma linha na lista <code>JOGOS</code> no index.html.</footer>
+<footer>Jogos infantis educativos • Funciona offline após instalar</footer>
 
 <script>
-// ativo:false = jogo ainda em desenvolvimento (só existe a especificação .md)
 const JOGOS = [
-  {nome:"Letrinhas",      emoji:"🔤", skill:"Letras e palavras",       cor:"#ff5a5f", arquivo:"Abc_Divertido.html"},
-  {nome:"Números",        emoji:"🔢", skill:"Números e contagem",      cor:"#3b82f6", arquivo:"matematica_divertida.html"},
-  {nome:"Organiza Bagunça",emoji:"🧸", skill:"Organização e lógica",   cor:"#10b981", arquivo:"Organizar_Bagunca.html"},
-  {nome:"Quebra-Gelo do Pinguim",emoji:"🐧", skill:"Coordenação motora e raciocínio", cor:"#06b6d4", arquivo:"Pinguim.html"},
-  {nome:"Estoura Balão",  emoji:"🎈", skill:"Coordenação motora",      cor:"#f59e0b", arquivo:"estoura_baloes.html"},
-  {nome:"Jogo da Memória",emoji:"🧠", skill:"Memória e cognição",      cor:"#8b5cf6", arquivo:"jogo_memoria.html"},
-  {nome:"Rango Monstro",  emoji:"👾", skill:"Contagem e alimentação",  cor:"#ec4899", arquivo:"rango_monstro.html"},
-  {nome:"Sinfonia de Sons",emoji:"🎵", skill:"Animais, carros, dinos e mais", cor:"#84cc16", arquivo:"sinfonia_animais.html"},
+  {nome:"Letrinhas",            emoji:"🔤", skill:"Letras e palavras",            cor:"#ff5a5f", arquivo:"Abc_Divertido.html"},
+  {nome:"Números",              emoji:"🔢", skill:"Números e contagem",           cor:"#3b82f6", arquivo:"matematica_divertida.html"},
+  {nome:"Organiza Bagunça",     emoji:"🧸", skill:"Organização e lógica",        cor:"#10b981", arquivo:"Organizar_Bagunca.html"},
+  {nome:"Quebra-Gelo do Pinguim",emoji:"🐧", skill:"Coordenação e raciocínio",    cor:"#06b6d4", arquivo:"Pinguim.html"},
+  {nome:"Estoura Balão",        emoji:"🎈", skill:"Cores, números e letras",     cor:"#f59e0b", arquivo:"estoura_baloes.html"},
+  {nome:"Jogo da Memória",      emoji:"🧠", skill:"Memória com frutas e bichos", cor:"#8b5cf6", arquivo:"jogo_memoria.html"},
+  {nome:"Rango Monstro",        emoji:"👾", skill:"Comidinhas e alimentação",    cor:"#ec4899", arquivo:"rango_monstro.html"},
+  {nome:"Sinfonia de Sons",     emoji:"🎵", skill:"Animais, carros, dinos e mais",cor:"#84cc16", arquivo:"sinfonia_animais.html"}
 ];
 
 const grid = document.getElementById("grid");
@@ -55,6 +88,40 @@ for (const j of JOGOS) {
   a.innerHTML = `<div class="emoji">${j.emoji}</div><h2>${j.nome}</h2><small>${j.skill}</small><span class="tag">${ativo ? "Jogar!" : "Em breve"}</span>`;
   grid.appendChild(a);
 }
+
+// --- REGISTRO DO SERVICE WORKER (PWA) ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('PWA ServiceWorker registrado com sucesso:', reg.scope))
+      .catch(err => console.log('Falha ao registrar ServiceWorker:', err));
+  });
+}
+
+// --- CONTROLE DO BOTÃO DE INSTALAÇÃO NO ANDROID/CHROME ---
+let deferredPrompt;
+const installBtn = document.getElementById('install-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
+
+installBtn.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`Escolha do usuário: ${outcome}`);
+    deferredPrompt = null;
+    installBtn.style.display = 'none';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+  console.log('Aplicativo instalado com sucesso!');
+});
 </script>
 </body>
 </html>
