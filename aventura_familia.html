@@ -94,8 +94,8 @@
                 <!-- Henrique (Homem-Aranha) -->
                 <button onclick="selectCharacter('henrique')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-red-500 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center relative">
-                        <img src="char_henrique.png" class="h-full object-contain drop-shadow-xl" alt="Henrique">
-                        <img src="avatar_henrique.png" class="absolute -top-1 -right-1 w-8 h-8 rounded-full border-2 border-white shadow-md object-cover bg-white" alt="Foto">
+                        <img src="char_henrique.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Henrique">
+                        <img src="avatar_henrique.png?v=2" class="absolute -top-1 -right-1 w-8 h-8 rounded-full border-2 border-white shadow-md object-cover bg-white" alt="Foto">
                     </div>
                     <span class="text-base sm:text-xl font-black text-red-600 mt-2">Henrique</span>
                     <span class="text-xs font-bold text-gray-600">🕷️ Homem-Aranha</span>
@@ -104,7 +104,7 @@
                 <!-- Papai Anderson -->
                 <button onclick="selectCharacter('anderson')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-blue-600 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center">
-                        <img src="char_anderson.png" class="h-full object-contain drop-shadow-xl" alt="Pai Anderson">
+                        <img src="char_anderson.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Pai Anderson">
                     </div>
                     <span class="text-base sm:text-xl font-black text-blue-700 mt-2">Pai Anderson</span>
                     <span class="text-xs font-bold text-gray-600">🧔 Barba & Grisalho</span>
@@ -113,7 +113,7 @@
                 <!-- Mamãe -->
                 <button onclick="selectCharacter('mamae')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-pink-500 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center">
-                        <img src="char_mamae.png" class="h-full object-contain drop-shadow-xl" alt="Mamãe">
+                        <img src="char_mamae.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Mamãe">
                     </div>
                     <span class="text-base sm:text-xl font-black text-pink-600 mt-2">Mamãe</span>
                     <span class="text-xs font-bold text-gray-600">👓 Blusa Rosa & Jeans</span>
@@ -122,7 +122,7 @@
                 <!-- Vovó -->
                 <button onclick="selectCharacter('vovo')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-purple-500 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center">
-                        <img src="char_vovo.png" class="h-full object-contain drop-shadow-xl" alt="Vovó">
+                        <img src="char_vovo.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Vovó">
                     </div>
                     <span class="text-base sm:text-xl font-black text-purple-700 mt-2">Vovó</span>
                     <span class="text-xs font-bold text-gray-600">👵 Óculos & Xale</span>
@@ -198,10 +198,10 @@
             mamae: new Image(),
             vovo: new Image()
         };
-        charImages.henrique.src = 'char_henrique.png';
-        charImages.anderson.src = 'char_anderson.png';
-        charImages.mamae.src = 'char_mamae.png';
-        charImages.vovo.src = 'char_vovo.png';
+        charImages.henrique.src = 'char_henrique.png?v=2';
+        charImages.anderson.src = 'char_anderson.png?v=2';
+        charImages.mamae.src = 'char_mamae.png?v=2';
+        charImages.vovo.src = 'char_vovo.png?v=2';
 
         let audioCtx = null;
         let selectedHero = 'henrique';
