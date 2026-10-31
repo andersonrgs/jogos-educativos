@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jogo da Memória - Animais e Frutas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 20%, #4a154b 0%, #1e0826 100%);
+            min-height: 100dvh;
+            height: 100dvh;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* Sistema 3D de Virada de Carta (Card Flip) */
+        .card-scene {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-inner.matched {
+            transform: rotateY(180deg) scale(0.96);
+            pointer-events: none;
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Verso da carta (Estrela mágica roxa/amarela) */
+        .card-back {
+            background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
+            border: 4px solid #a855f7;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.2), 0 8px 18px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-back:active {
+            transform: scale(0.95);
+        }
+
+        /* Frente da carta (Branca e super colorida) */
+        .card-front {
+            background: #ffffff;
+            border: 4px solid #facc15;
+            transform: rotateY(180deg);
+        }
+
+        /* Animação quando acerta o par */
+        @keyframes pulse-gold {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.8); border-color: #facc15; }
+            50% { box-shadow: 0 0 25px 8px rgba(250, 204, 21, 0.9); border-color: #ffffff; }
+        }
+        .matched-glow {
+            animation: pulse-gold 1.2s ease-in-out infinite;
+        }
+
+        /* Animação de Erro (Shake) */
+        @keyframes shake-card {
+            0%, 100% { transform: rotateY(180deg) translateX(0); }
+            20% { transform: rotateY(180deg) translateX(-10px) rotate(-3deg); }
+            40% { transform: rotateY(180deg) translateX(10px) rotate(3deg); }
+            60% { transform: rotateY(180deg) translateX(-8px) rotate(-2deg); }
+            80% { transform: rotateY(180deg) translateX(8px) rotate(2deg); }
+        }
+        .shake-animation {
+            animation: shake-card 0.45s ease-in-out;
+        }
+
+        /* Animação pop-in */
+        @keyframes popIn {
+            0% { transform: scale(0.4); opacity: 0; }
+            80% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="h-[100dvh] w-screen flex flex-col items-center justify-between relative p-2 sm:p-4">
+
+    <!-- Canvas para Partículas Comemorativas de Vitória -->
+    <canvas id="victory-canvas" class="absolute inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Tela Inicial de Boas-vindas -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-950/95 z-50 p-6 text-center">
+        <a href="index.html" class="absolute top-4 left-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-lg rounded-2xl shadow border border-white/20 flex items-center gap-1 font-bold">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="text-7xl sm:text-8xl mb-4 animate-bounce">🧠✨</div>
+        <h1 class="text-4xl sm:text-6xl font-black text-yellow-300 mb-4 drop-shadow-lg">
+            Jogo da Memória
+        </h1>
+        <p class="text-lg sm:text-2xl text-purple-200 font-semibold mb-8 max-w-md">
+            Encontre os pares de animais e frutinhas fofas!
+        </p>
+        <button onclick="startGame()" class="bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-2xl sm:text-3xl font-black py-4 px-12 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95 pop-in">
+            JOGAR!
+        </button>
+    </div>
+
+    <!-- Interface Principal do Jogo -->
+    <header class="w-full max-w-2xl px-2 pt-2 flex justify-between items-center z-20 flex-none">
+        <a href="index.html" class="px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm sm:text-base rounded-2xl shadow border border-white/20 flex items-center gap-1 font-bold active:scale-95">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="flex flex-col items-center">
+            <span id="level-title" class="text-xs sm:text-sm font-bold bg-purple-500/40 border border-purple-400/40 text-yellow-300 px-3 py-0.5 rounded-full shadow-sm">
+                Fase 1: 2 Pares
+            </span>
+            <span id="pairs-count" class="text-sm sm:text-base font-bold text-purple-200 mt-0.5">
+                Pares: 0 / 2
+            </span>
+        </div>
+        <button onclick="replayCurrentPhaseVoice()" title="Ouvir instrução" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-lg rounded-2xl shadow-md flex items-center gap-1 active:scale-95 font-bold">
+            🔊
+        </button>
+    </header>
+
+    <!-- Tabuleiro de Cartas Dinâmico -->
+    <main class="flex-1 w-full max-w-2xl flex items-center justify-center p-2 min-h-0 overflow-hidden">
+        <div id="grid-container" class="w-full h-full max-h-[70vh] grid gap-2 sm:gap-4 place-items-center">
+            <!-- Cartas injetadas via JS -->
+        </div>
+    </main>
+
+    <!-- Rodapé Lúdico com Dica -->
+    <footer class="flex-none pb-[max(8px,env(safe-area-inset-bottom))] text-center">
+        <p class="text-xs sm:text-sm text-purple-300/80 font-medium">
+            Toque nas cartinhas para encontrar o par igual!
+        </p>
+    </footer>
+
+    <!-- Overlay de Conclusão da Fase -->
+    <div id="phase-overlay" class="absolute inset-0 bg-black/80 backdrop-blur-sm hidden-screen flex flex-col items-center justify-center z-40 p-6 text-center">
+        <div class="text-7xl sm:text-8xl mb-3 animate-bounce">🌟🎉</div>
+        <h2 id="phase-msg-title" class="text-4xl sm:text-6xl font-black text-yellow-300 mb-2 drop-shadow-md">
+            MUITO BEM!
+        </h2>
+        <p id="phase-msg-subtitle" class="text-lg sm:text-2xl text-white font-bold mb-8">
+            Você achou todos os pares!
+        </p>
+        <button id="next-phase-btn" onclick="nextPhase()" class="bg-green-500 hover:bg-green-400 text-white text-2xl sm:text-3xl font-black py-3.5 px-10 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95">
+            Próxima Fase ▶
+        </button>
+    </div>
+
+    <script>
+        /**
+         * LÓGICA DO JOGO DA MEMÓRIA EDUCATIVO
+         */
+
+        // Banco de Itens com nomes infantis para pronúncia por voz
+        const ITEMS_POOL = [
+            // Animais
+            { id: 'cao',      name: 'Cachorrinho', emoji: '🐶' },
+            { id: 'gato',     name: 'Gatinho',     emoji: '🐱' },
+            { id: 'leao',     name: 'Leão',        emoji: '🦁' },
+            { id: 'sapo',     name: 'Sapinho',     emoji: '🐸' },
+            { id: 'macaco',   name: 'Macaco',      emoji: '🐒' },
+            { id: 'elefante', name: 'Elefante',    emoji: '🐘' },
+            { id: 'tartaruga',name: 'Tartaruga',   emoji: '🐢' },
+            { id: 'coelho',   name: 'Coelhinho',   emoji: '🐰' },
+            { id: 'girafa',   name: 'Girafa',      emoji: '🦒' },
+            { id: 'peixe',    name: 'Peixinho',    emoji: '🐟' },
+
+            // Frutas
+            { id: 'maca',     name: 'Maçã',        emoji: '🍎' },
+            { id: 'banana',   name: 'Banana',      emoji: '🍌' },
+            { id: 'uva',      name: 'Uva',         emoji: '🍇' },
+            { id: 'morango',  name: 'Morango',     emoji: '🍓' },
+            { id: 'melancia', name: 'Melancia',    emoji: '🍉' },
+            { id: 'abacaxi',  name: 'Abacaxi',     emoji: '🍍' },
+            { id: 'laranja',  name: 'Laranja',     emoji: '🍊' },
+            { id: 'pera',     name: 'Pêra',        emoji: '🍐' }
+        ];
+
+        // Fases do jogo com progressão gradual
+        const PHASES = [
+            { level: 1, pairs: 2, cols: 2, rows: 2, title: "Fase 1: 2 Pares (Fácil)" },
+            { level: 2, pairs: 3, cols: 3, rows: 2, title: "Fase 2: 3 Pares" },
+            { level: 3, pairs: 4, cols: 4, rows: 2, title: "Fase 3: 4 Pares" },
+            { level: 4, pairs: 6, cols: 4, rows: 3, title: "Fase 4: 6 Pares (Super Desafio!)" }
+        ];
+
+        let currentPhaseIndex = 0;
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let isLocked = false;
+        let audioCtx = null;
+
+        // Elementos DOM
+        const startScreen = document.getElementById('start-screen');
+        const gridContainer = document.getElementById('grid-container');
+        const levelTitle = document.getElementById('level-title');
+        const pairsCount = document.getElementById('pairs-count');
+        const phaseOverlay = document.getElementById('phase-overlay');
+        const phaseMsgTitle = document.getElementById('phase-msg-title');
+        const phaseMsgSubtitle = document.getElementById('phase-msg-subtitle');
+        const nextPhaseBtn = document.getElementById('next-phase-btn');
+
+        // --- SISTEMA DE VOZ EDUCATIVA (Text-To-Speech) ---
+        function speakText(text, rate = 0.88, pitch = 1.15) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function replayCurrentPhaseVoice() {
+            const phase = PHASES[currentPhaseIndex];
+            speakText(`Encontre os ${phase.pairs} pares de bichinhos e frutinhas!`);
+        }
+
+        // --- SISTEMA DE ÁUDIO SINTÉTICO (Web Audio API) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'flip') {
+                // Som suave de estalo/virada de carta
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(700, now + 0.08);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'match') {
+                // Acorde brilhante de par correto
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.value = freq;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0.2, now + i * 0.08);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.25);
+                    o.start(now + i * 0.08);
+                    o.stop(now + i * 0.08 + 0.25);
+                });
+            } else if (type === 'error') {
+                // Tom suave de mola (sem frustrar a criança)
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.exponentialRampToValueAtTime(140, now + 0.3);
+                gainNode.gain.setValueAtTime(0.18, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                // Comemoração de vitória
+                const notes = [440, 554.37, 659.25, 880, 1108.73];
+                notes.forEach((f, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'triangle';
+                    o.frequency.value = f;
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0.25, now + i * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.35);
+                    o.start(now + i * 0.1);
+                    o.stop(now + i * 0.1 + 0.35);
+                });
+            }
+        }
+
+        // --- INÍCIO E CONTROLE DE FASES ---
+        function startGame() {
+            initAudio();
+            startScreen.classList.add('hidden-screen');
+            currentPhaseIndex = 0;
+            loadPhase(currentPhaseIndex);
+        }
+
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function loadPhase(index) {
+            const phase = PHASES[index];
+            levelTitle.textContent = phase.title;
+            matchedPairs = 0;
+            pairsCount.textContent = `Pares: 0 / ${phase.pairs}`;
+            flippedCards = [];
+            isLocked = false;
+            stopParticles();
+            phaseOverlay.classList.add('hidden-screen');
+
+            // Seleciona itens aleatórios do acervo para esta fase
+            const chosenItems = shuffle(ITEMS_POOL).slice(0, phase.pairs);
+            
+            // Duplica para formar os pares
+            const deck = [];
+            chosenItems.forEach(item => {
+                deck.push({ ...item, uid: Math.random() });
+                deck.push({ ...item, uid: Math.random() });
+            });
+
+            // Embaralha o baralho final
+            const shuffledDeck = shuffle(deck);
+
+            // Ajusta grade CSS dinamicamente
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `repeat(${phase.cols}, minmax(0, 1fr))`;
+            gridContainer.style.gridTemplateRows = `repeat(${phase.rows}, minmax(0, 1fr))`;
+
+            // Dimensões responsivas por carta
+            const isSmallCard = phase.pairs > 4;
+            const emojiSize = isSmallCard ? 'text-4xl sm:text-6xl' : 'text-5xl sm:text-7xl';
+            const starSize = isSmallCard ? 'text-3xl sm:text-5xl' : 'text-4xl sm:text-6xl';
+
+            shuffledDeck.forEach((data, cardIdx) => {
+                const scene = document.createElement('div');
+                scene.className = 'card-scene w-full h-full max-w-[130px] max-h-[160px] aspect-[4/5] pop-in';
+                scene.style.animationDelay = `${cardIdx * 0.05}s`;
+
+                const inner = document.createElement('div');
+                inner.className = 'card-inner';
+                inner.dataset.id = data.id;
+                inner.dataset.name = data.name;
+
+                // Verso da Carta
+                const back = document.createElement('div');
+                back.className = 'card-face card-back';
+                back.innerHTML = `<span class="${starSize} filter drop-shadow">⭐</span>`;
+
+                // Frente da Carta
+                const front = document.createElement('div');
+                front.className = 'card-face card-front p-2';
+                front.innerHTML = `
+                    <span class="${emojiSize} drop-shadow-md mb-1">${data.emoji}</span>
+                    <span class="text-xs sm:text-sm font-bold text-gray-700 tracking-wide">${data.name}</span>
+                `;
+
+                inner.appendChild(back);
+                inner.appendChild(front);
+                scene.appendChild(inner);
+
+                inner.addEventListener('click', () => handleCardClick(inner, data));
+                gridContainer.appendChild(scene);
+            });
+
+            setTimeout(() => {
+                speakText(`Fase ${phase.level}! Encontre os pares!`);
+            }, 300);
+        }
+
+        // --- INTERAÇÃO COM A CARTA ---
+        function handleCardClick(cardEl, data) {
+            if (isLocked) return;
+            if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+
+            // Vira a carta
+            playSound('flip');
+            cardEl.classList.add('flipped');
+            speakText(data.name); // Pronuncia o nome do item imediatamente
+
+            flippedCards.push({ element: cardEl, data: data });
+
+            // Se virou duas cartas, verifica o par
+            if (flippedCards.length === 2) {
+                isLocked = true;
+                const [card1, card2] = flippedCards;
+
+                if (card1.data.id === card2.data.id) {
+                    // ACERTOU O PAR!
+                    setTimeout(() => {
+                        playSound('match');
+                        card1.element.classList.add('matched', 'matched-glow');
+                        card2.element.classList.add('matched', 'matched-glow');
+                        
+                        matchedPairs++;
+                        const phase = PHASES[currentPhaseIndex];
+                        pairsCount.textContent = `Pares: ${matchedPairs} / ${phase.pairs}`;
+
+                        speakText(`Par de ${card1.data.name}! Muito bem!`);
+                        
+                        flippedCards = [];
+                        isLocked = false;
+
+                        // Se completou todos os pares da fase
+                        if (matchedPairs === phase.pairs) {
+                            setTimeout(triggerPhaseWin, 1000);
+                        }
+                    }, 500);
+
+                } else {
+                    // ERROU O PAR!
+                    setTimeout(() => {
+                        playSound('error');
+                        card1.element.classList.add('shake-animation');
+                        card2.element.classList.add('shake-animation');
+
+                        setTimeout(() => {
+                            card1.element.classList.remove('flipped', 'shake-animation');
+                            card2.element.classList.remove('flipped', 'shake-animation');
+                            flippedCards = [];
+                            isLocked = false;
+                        }, 800);
+                    }, 700);
+                }
+            }
+        }
+
+        // --- VITÓRIA DA FASE ---
+        function triggerPhaseWin() {
+            playSound('win');
+            startParticles();
+
+            const isLast = currentPhaseIndex >= PHASES.length - 1;
+            if (isLast) {
+                phaseMsgTitle.textContent = "CAMPEÃO DA MEMÓRIA! 🏆";
+                phaseMsgSubtitle.textContent = "Você completou todas as fases!";
+                nextPhaseBtn.textContent = "Jogar Novamente 🔄";
+                speakText("Parabéns! Você tem uma memória fantástica!");
+            } else {
+                phaseMsgTitle.textContent = "MUITO BEM! 🌟";
+                phaseMsgSubtitle.textContent = "Você encontrou todos os pares!";
+                nextPhaseBtn.textContent = "Próxima Fase ▶";
+                speakText("Muito bem! Vamos para a próxima fase!");
+            }
+
+            phaseOverlay.classList.remove('hidden-screen');
+        }
+
+        function nextPhase() {
+            if (currentPhaseIndex >= PHASES.length - 1) {
+                currentPhaseIndex = 0;
+            } else {
+                currentPhaseIndex++;
+            }
+            loadPhase(currentPhaseIndex);
+        }
+
+        // --- SISTEMA DE PARTÍCULAS (Estrelas no Canvas) ---
+        const canvas = document.getElementById('victory-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationFrameId;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class StarParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 12 + 4;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.gravity = 0.35;
+                this.size = Math.random() * 14 + 8;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 12;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.015 + 0.01;
+                const colors = ['#FDE047', '#F97316', '#EC4899', '#A855F7', '#22C55E', '#38BDF8'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.vx;
+                this.vy += this.gravity;
+                this.y += this.vy;
+                this.rotation += this.rotationSpeed;
+                this.life -= this.decay;
+            }
+            draw(ctx) {
+                if (this.life <= 0) return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * this.size,
+                               -Math.sin((18 + i * 72) * Math.PI / 180) * this.size);
+                    ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (this.size / 2.5),
+                               -Math.sin((54 + i * 72) * Math.PI / 180) * (this.size / 2.5));
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function startParticles() {
+            particles = [];
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 2;
+            for (let i = 0; i < 60; i++) {
+                particles.push(new StarParticle(cx, cy));
+            }
+            if (!animationFrameId) animateParticles();
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = false;
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw(ctx);
+                if (particles[i].life > 0) alive = true;
+            }
+            if (alive) {
+                animationFrameId = requestAnimationFrame(animateParticles);
+            } else {
+                stopParticles();
+            }
+        }
+
+        function stopParticles() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+        }
+    </script>
+</body>
+</html>
