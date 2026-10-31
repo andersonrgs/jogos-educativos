@@ -9,8 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Three.js Local para Suporte 100% Offline e Alto Desempenho 3D -->
+    <!-- Three.js Local + Fallback CDN para Garantia Total de Funcionamento -->
     <script src="three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
 
     <style>
         * {
