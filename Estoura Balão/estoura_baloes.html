@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Estoura Balões Divertido</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(180deg, #bbf2f6 0%, #d8f5ff 60%, #e0f2fe 100%);
+            min-height: 100dvh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Nuvens decorativas de fundo */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 50px;
+            pointer-events: none;
+            animation: floatCloud linear infinite;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
+        }
+        .cloud1 { width: 140px; height: 50px; top: 12%; left: -160px; animation-duration: 38s; }
+        .cloud1::before { width: 60px; height: 60px; top: -25px; left: 25px; }
+        .cloud1::after { width: 45px; height: 45px; top: -15px; left: 70px; }
+
+        .cloud2 { width: 180px; height: 60px; top: 28%; left: -200px; animation-duration: 52s; animation-delay: 15s; }
+        .cloud2::before { width: 75px; height: 75px; top: -35px; left: 35px; }
+        .cloud2::after { width: 55px; height: 55px; top: -20px; left: 95px; }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 250px)); }
+        }
+
+        /* Balão animado subindo suavemente */
+        .balloon {
+            position: absolute;
+            bottom: -160px;
+            cursor: pointer;
+            will-change: transform;
+            animation: riseUp linear forwards;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
+            transition: transform 0.1s ease-out;
+        }
+
+        .balloon:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes riseUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(calc(-30vh)) rotate(4deg);
+            }
+            50% {
+                transform: translateY(calc(-60vh)) rotate(-4deg);
+            }
+            75% {
+                transform: translateY(calc(-90vh)) rotate(3deg);
+            }
+            100% {
+                transform: translateY(calc(-135vh)) rotate(0deg);
+            }
+        }
+
+        /* Animação de estouro instantâneo */
+        @keyframes popAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.8; }
+            100% { transform: scale(0.2); opacity: 0; }
+        }
+        .popping {
+            animation: popAnimation 0.18s ease-out forwards !important;
+            pointer-events: none;
+        }
+
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="w-screen h-[100dvh] flex flex-col justify-between relative">
+
+    <!-- Nuvens no céu -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+
+    <!-- Canvas para Confetes e Estrelinhas ao Estourar -->
+    <canvas id="pop-canvas" class="absolute inset-0 pointer-events-none z-30"></canvas>
+
+    <!-- Tela Inicial de Apresentação -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-sky-200/95 z-50 p-6 text-center">
+        <a href="index.html" class="absolute top-4 left-4 px-4 py-2 bg-white text-sky-800 text-lg rounded-2xl shadow border-2 border-sky-300 flex items-center gap-1 font-bold">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="text-8xl mb-3 animate-bounce">🎈✨</div>
+        <h1 class="text-4xl sm:text-6xl font-black text-rose-500 mb-3 drop-shadow-md">
+            Estoura Balões!
+        </h1>
+        <p class="text-lg sm:text-2xl text-sky-900 font-semibold mb-8 max-w-md">
+            Toque nos balões para ouvir as cores, números e letrinhas!
+        </p>
+        <button onclick="startGame()" class="bg-amber-400 hover:bg-amber-300 text-amber-950 text-2xl sm:text-3xl font-black py-4 px-12 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95">
+            COMEÇAR!
+        </button>
+    </div>
+
+    <!-- Barra Superior (Menu + Modos + Placar) -->
+    <header class="w-full max-w-4xl mx-auto px-3 pt-3 flex justify-between items-center z-20 flex-none">
+        <a href="index.html" class="px-3 py-1.5 bg-white/90 hover:bg-white text-sky-800 text-sm sm:text-base rounded-2xl shadow-md border-2 border-sky-200 flex items-center gap-1 font-bold active:scale-95">
+            🏠 <span>Menu</span>
+        </a>
+
+        <!-- Seletor de Modo Educativo (Cores, Números, Letras) -->
+        <div class="flex gap-1 sm:gap-2 bg-white/80 backdrop-blur-sm p-1 rounded-2xl shadow border border-sky-200">
+            <button onclick="setMode('colors')" id="btn-mode-colors" class="px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-rose-500 text-white shadow">
+                🎨 Cores
+            </button>
+            <button onclick="setMode('numbers')" id="btn-mode-numbers" class="px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-sky-800 hover:bg-sky-100">
+                🔢 Números
+            </button>
+            <button onclick="setMode('letters')" id="btn-mode-letters" class="px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-sky-800 hover:bg-sky-100">
+                🔤 Letras
+            </button>
+        </div>
+
+        <!-- Placar de Balões Estourados -->
+        <div class="bg-amber-400 text-amber-950 px-3.5 py-1.5 rounded-2xl font-black text-sm sm:text-base shadow-md flex items-center gap-1">
+            <span>🎈</span> <span id="pop-counter">0</span>
+        </div>
+    </header>
+
+    <!-- Área de Jogo onde os balões flutuam livremente -->
+    <main id="balloon-container" class="absolute inset-0 z-10 overflow-hidden pointer-events-auto">
+        <!-- Balões gerados dinamicamente via JS -->
+    </main>
+
+    <!-- Rodapé Sutil com Dica -->
+    <footer class="w-full text-center pb-[max(8px,env(safe-area-inset-bottom))] z-20 flex-none pointer-events-none">
+        <span class="bg-white/70 backdrop-blur-sm px-4 py-1 rounded-full text-xs sm:text-sm text-sky-900 font-bold shadow-sm">
+            Toque nos balões para estourar! 🎈
+        </span>
+    </footer>
+
+    <script>
+        /**
+         * LÓGICA DO JOGO ESTOURA BALÕES EDUCATIVO
+         */
+
+        // Banco de Cores vibrantes com seus nomes em português
+        const BALLOON_COLORS = [
+            { name: "Vermelho", hex: "#EF4444", dark: "#B91C1C" },
+            { name: "Azul",     hex: "#3B82F6", dark: "#1D4ED8" },
+            { name: "Amarelo",  hex: "#FACC15", dark: "#CA8A04" },
+            { name: "Verde",    hex: "#22C55E", dark: "#15803D" },
+            { name: "Roxo",     hex: "#A855F7", dark: "#7E22CE" },
+            { name: "Laranja",  hex: "#F97316", dark: "#C2410C" },
+            { name: "Rosa",     hex: "#EC4899", dark: "#BE185D" },
+            { name: "Ciano",    hex: "#06B6D4", dark: "#0E7490" }
+        ];
+
+        const NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+        const LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V"];
+
+        const phoneticLetters = {
+            'A': 'A', 'B': 'Bê', 'C': 'Cê', 'D': 'Dê', 'E': 'É',
+            'F': 'Efe', 'G': 'Gê', 'H': 'Agá', 'I': 'I', 'J': 'Jota',
+            'L': 'Ele', 'M': 'Eme', 'N': 'Ene', 'O': 'Ó', 'P': 'Pê',
+            'R': 'Erre', 'S': 'Esse', 'T': 'Tê', 'U': 'U', 'V': 'Vê'
+        };
+
+        let currentMode = 'colors'; // 'colors' | 'numbers' | 'letters'
+        let popCount = 0;
+        let spawnInterval = null;
+        let audioCtx = null;
+
+        // Elementos DOM
+        const balloonContainer = document.getElementById('balloon-container');
+        const popCounter = document.getElementById('pop-counter');
+        const startScreen = document.getElementById('start-screen');
+        const btnColors = document.getElementById('btn-mode-colors');
+        const btnNumbers = document.getElementById('btn-mode-numbers');
+        const btnLetters = document.getElementById('btn-mode-letters');
+
+        // --- SISTEMA DE SÍNTESE DE VOZ (Text-To-Speech) ---
+        function speakText(text, rate = 0.9, pitch = 1.2) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        // --- SISTEMA DE ÁUDIO SINTÉTICO (Efeito de Estouro POP) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playPopSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            // Gerador de Ruído + Oscilador para um som de "POP!" perfeito
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.type = 'sine';
+            // Variação suave de pitch para cada estouro soar único
+            const startFreq = 700 + Math.random() * 300;
+            osc.frequency.setValueAtTime(startFreq, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+            gain.gain.setValueAtTime(0.45, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        // --- TROCA DE MODO ---
+        function setMode(mode) {
+            currentMode = mode;
+            [btnColors, btnNumbers, btnLetters].forEach(btn => {
+                btn.className = "px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-sky-800 hover:bg-sky-100";
+            });
+
+            if (mode === 'colors') {
+                btnColors.className = "px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-rose-500 text-white shadow";
+                speakText("Modo Cores!");
+            } else if (mode === 'numbers') {
+                btnNumbers.className = "px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-blue-500 text-white shadow";
+                speakText("Modo Números!");
+            } else {
+                btnLetters.className = "px-2.5 sm:px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-emerald-500 text-white shadow";
+                speakText("Modo Letras!");
+            }
+        }
+
+        // --- CRIAÇÃO DOS BALÕES SVG ---
+        function createBalloonSVG(colorHex, label = "") {
+            return `
+                <svg viewBox="0 0 100 135" class="w-full h-full filter drop-shadow-md overflow-visible">
+                    <defs>
+                        <!-- Gradiente radial para volume 3D e brilho do balão -->
+                        <radialGradient id="grad-${colorHex.replace('#','')}" cx="35%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
+                            <stop offset="35%" stop-color="${colorHex}" stop-opacity="0.95"/>
+                            <stop offset="100%" stop-color="#000000" stop-opacity="0.25"/>
+                        </radialGradient>
+                    </defs>
+                    <!-- Corpo do balão -->
+                    <path d="M50 5 C20 5, 5 30, 5 55 C5 85, 40 105, 47 112 L45 116 L55 116 L53 112 C60 105, 95 85, 95 55 C95 30, 80 5, 50 5 Z" 
+                          fill="${colorHex}"/>
+                    <path d="M50 5 C20 5, 5 30, 5 55 C5 85, 40 105, 47 112 L45 116 L55 116 L53 112 C60 105, 95 85, 95 55 C95 30, 80 5, 50 5 Z" 
+                          fill="url(#grad-${colorHex.replace('#','')})"/>
+                    <!-- Brilho no topo -->
+                    <ellipse cx="32" cy="28" rx="10" ry="16" transform="rotate(-30 32 28)" fill="#ffffff" opacity="0.45"/>
+                    <!-- Cordinha pendurada -->
+                    <path d="M50 116 Q45 125, 52 132 T48 140" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round"/>
+                    ${label ? `
+                        <text x="50" y="66" text-anchor="middle" dominant-baseline="central" 
+                              font-family="'Fredoka', sans-serif" font-weight="900" font-size="34" 
+                              fill="#ffffff" stroke="rgba(0,0,0,0.35)" stroke-width="2" paint-order="stroke fill">
+                            ${label}
+                        </text>
+                    ` : ''}
+                </svg>
+            `;
+        }
+
+        function spawnBalloon() {
+            // Limita a quantidade simultânea para não pesar em celulares
+            if (document.querySelectorAll('.balloon').length >= 8) return;
+
+            const colorObj = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+            let label = "";
+            let speechWord = colorObj.name;
+
+            if (currentMode === 'numbers') {
+                label = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
+                speechWord = label;
+            } else if (currentMode === 'letters') {
+                label = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+                speechWord = phoneticLetters[label] || label;
+            }
+
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+
+            // Tamanho variado e adaptável
+            const size = Math.floor(Math.random() * 25) + 85; // 85px a 110px
+            balloon.style.width = `${size}px`;
+            balloon.style.height = `${Math.floor(size * 1.35)}px`;
+
+            // Posição horizontal aleatória (garante margem das bordas)
+            const maxLeft = window.innerWidth - size - 20;
+            const left = Math.max(15, Math.floor(Math.random() * maxLeft));
+            balloon.style.left = `${left}px`;
+
+            // Velocidade de subida (6 a 9 segundos)
+            const duration = (Math.random() * 3 + 6.5).toFixed(1);
+            balloon.style.animationDuration = `${duration}s`;
+
+            balloon.innerHTML = createBalloonSVG(colorObj.hex, label);
+
+            // Ao tocar no balão: ESTOURA!
+            const popHandler = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                popBalloon(balloon, colorObj.hex, speechWord);
+            };
+
+            balloon.addEventListener('pointerdown', popHandler);
+
+            // Remove automaticamente quando terminar de subir fora da tela
+            balloon.addEventListener('animationend', () => {
+                balloon.remove();
+            });
+
+            balloonContainer.appendChild(balloon);
+        }
+
+        function popBalloon(balloonEl, colorHex, speechWord) {
+            playPopSound();
+            speakText(speechWord);
+
+            // Atualiza placar
+            popCount++;
+            popCounter.textContent = popCount;
+
+            // Pega a posição central do balão para disparar confetes
+            const rect = balloonEl.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            spawnConfetti(cx, cy, colorHex);
+
+            // Animação de estouro
+            balloonEl.classList.add('popping');
+            setTimeout(() => {
+                balloonEl.remove();
+            }, 200);
+        }
+
+        // --- SISTEMA DE CONFETES / PARTÍCULAS EM CANVAS ---
+        const canvas = document.getElementById('pop-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, baseColor) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 9 + 4;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.gravity = 0.28;
+                this.size = Math.random() * 8 + 6;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.02;
+                const colors = [baseColor, '#ffffff', '#fde047', '#f97316'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.vx;
+                this.vy += this.gravity;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw(ctx) {
+                if (this.life <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function spawnConfetti(x, y, color) {
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+            if (!animId) animate();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let hasAlive = false;
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw(ctx);
+                if (particles[i].life > 0) hasAlive = true;
+            }
+            if (hasAlive) {
+                animId = requestAnimationFrame(animate);
+            } else {
+                cancelAnimationFrame(animId);
+                animId = null;
+                particles = [];
+            }
+        }
+
+        // --- INICIALIZAÇÃO ---
+        function startGame() {
+            initAudio();
+            startScreen.classList.add('hidden-screen');
+
+            speakText("Vamos estourar balões!");
+
+            // Gera balões em intervalos regulares
+            spawnBalloon();
+            spawnInterval = setInterval(spawnBalloon, 1200);
+        }
+    </script>
+</body>
+</html>
