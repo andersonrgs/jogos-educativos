@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Rango Monstro - Alimente o Monstrinho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: radial-gradient(circle at 50% 30%, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%);
+            min-height: 100dvh;
+            height: 100dvh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animações do Monstrinho */
+        .monster-idle {
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.03, 0.97) translateY(4px); }
+        }
+
+        @keyframes chew {
+            0%, 100% { transform: scale(1) rotate(0); }
+            25% { transform: scale(1.1, 0.9) rotate(-4deg); }
+            50% { transform: scale(0.95, 1.05) rotate(4deg); }
+            75% { transform: scale(1.08, 0.92) rotate(-2deg); }
+        }
+        .chewing {
+            animation: chew 0.5s ease-in-out infinite;
+        }
+
+        @keyframes happyJump {
+            0%, 100% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-35px) scale(1.1) rotate(-4deg); }
+            50% { transform: translateY(0) scale(1.05) rotate(4deg); }
+            75% { transform: translateY(-15px) scale(1.05); }
+        }
+        .happy-jump {
+            animation: happyJump 0.8s ease-in-out;
+        }
+
+        @keyframes shakeHead {
+            0%, 100% { transform: translateX(0) rotate(0); }
+            20% { transform: translateX(-15px) rotate(-6deg); }
+            40% { transform: translateX(15px) rotate(6deg); }
+            60% { transform: translateX(-10px) rotate(-4deg); }
+            80% { transform: translateX(10px) rotate(4deg); }
+        }
+        .shake-head {
+            animation: shakeHead 0.5s ease-in-out;
+        }
+
+        /* Balão de Pensamento Flutuante */
+        @keyframes floatBubble {
+            0%, 100% { transform: translateY(0) rotate(-1deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        .thought-bubble {
+            animation: floatBubble 2.5s ease-in-out infinite;
+        }
+
+        /* Pratinhos de comida */
+        .food-plate {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 0 #cbd5e1, 0 15px 25px rgba(0,0,0,0.1);
+        }
+        .food-plate:hover {
+            transform: translateY(-6px) scale(1.05);
+        }
+        .food-plate:active {
+            transform: translateY(6px) scale(0.95);
+            box-shadow: 0 4px 0 #cbd5e1;
+        }
+
+        /* Corações subindo quando come */
+        @keyframes heartFloat {
+            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+            100% { transform: translate(calc(-50% + var(--tx)), calc(-50% - 120px)) scale(1.4); opacity: 0; }
+        }
+        .floating-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            animation: heartFloat 1.2s ease-out forwards;
+        }
+
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="h-[100dvh] w-screen flex flex-col justify-between items-center relative p-3 sm:p-5">
+
+    <!-- Tela Inicial -->
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-pink-100/95 z-50 p-6 text-center">
+        <a href="index.html" class="absolute top-4 left-4 px-4 py-2 bg-white text-pink-700 text-lg rounded-2xl shadow border-2 border-pink-200 flex items-center gap-1 font-bold">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="text-8xl mb-3 animate-bounce">👾🍰</div>
+        <h1 class="text-4xl sm:text-6xl font-black text-pink-600 mb-3 drop-shadow-md">
+            Rango Monstro!
+        </h1>
+        <p class="text-lg sm:text-2xl text-pink-900 font-semibold mb-8 max-w-md">
+            O monstrinho está com fome! Descubra o que ele quer comer!
+        </p>
+        <button onclick="startGame()" class="bg-amber-400 hover:bg-amber-300 text-amber-950 text-2xl sm:text-3xl font-black py-4 px-12 rounded-full shadow-2xl transform transition hover:scale-105 active:scale-95">
+            ALIMENTAR!
+        </button>
+    </div>
+
+    <!-- Barra Superior -->
+    <header class="w-full max-w-2xl px-2 pt-1 flex justify-between items-center z-20 flex-none">
+        <a href="index.html" class="px-3.5 py-1.5 bg-white/90 hover:bg-white text-pink-700 text-sm sm:text-base rounded-2xl shadow border-2 border-pink-200 flex items-center gap-1 font-bold active:scale-95">
+            🏠 <span>Menu</span>
+        </a>
+        <div class="flex items-center gap-1 bg-white/80 px-4 py-1.5 rounded-2xl shadow-sm border border-pink-200">
+            <span class="text-xl">⭐</span>
+            <span id="score-text" class="text-sm sm:text-base font-bold text-pink-700">Rango: 0</span>
+        </div>
+        <button onclick="speakWish()" title="Ouvir o pedido" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-950 text-lg rounded-2xl shadow-md flex items-center gap-1 active:scale-95 font-bold">
+            🔊
+        </button>
+    </header>
+
+    <!-- Área Central: O Monstrinho e o Balão de Pensamento -->
+    <main class="flex-1 w-full max-w-xl flex flex-col items-center justify-center relative min-h-0 py-2">
+        
+        <!-- Balão de Pensamento -->
+        <div id="bubble" class="thought-bubble bg-white border-4 border-pink-400 rounded-3xl p-3 sm:p-4 shadow-xl flex items-center gap-3 cursor-pointer z-20 mb-2" onclick="speakWish()">
+            <div id="target-food-icon" class="text-4xl sm:text-6xl drop-shadow">🍎</div>
+            <div class="flex flex-col text-left">
+                <span class="text-xs sm:text-sm font-bold text-pink-400 uppercase tracking-wider">Eu quero comer:</span>
+                <span id="target-food-name" class="text-lg sm:text-2xl font-black text-pink-700">Maçã</span>
+            </div>
+            <span class="text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-bold ml-1">🔊</span>
+        </div>
+
+        <!-- SVG do Monstrinho Fofo -->
+        <div id="monster-wrapper" class="monster-idle relative w-48 sm:w-64 h-48 sm:h-64 flex items-center justify-center cursor-pointer" onclick="speakWish()">
+            <svg viewBox="0 0 200 200" class="w-full h-full filter drop-shadow-xl overflow-visible">
+                <defs>
+                    <!-- Gradiente do corpinho peludo do monstro (Ciano turquesa brilhante) -->
+                    <radialGradient id="monsterGrad" cx="35%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#67e8f9"/>
+                        <stop offset="60%" stop-color="#06b6d4"/>
+                        <stop offset="100%" stop-color="#0891b2"/>
+                    </radialGradient>
+                    <!-- Bochechas rosadas -->
+                    <radialGradient id="blushGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.5"/>
+                        <stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/>
+                    </radialGradient>
+                </defs>
+
+                <!-- Anteninhas com pompom -->
+                <path d="M70 45 Q55 20 50 15" stroke="#0891b2" stroke-width="6" stroke-linecap="round" fill="none"/>
+                <circle cx="50" cy="15" r="9" fill="#facc15"/>
+                
+                <path d="M130 45 Q145 20 150 15" stroke="#0891b2" stroke-width="6" stroke-linecap="round" fill="none"/>
+                <circle cx="150" cy="15" r="9" fill="#facc15"/>
+
+                <!-- Pés do monstrinho -->
+                <ellipse cx="65" cy="175" rx="22" ry="12" fill="#0891b2"/>
+                <ellipse cx="135" cy="175" rx="22" ry="12" fill="#0891b2"/>
+
+                <!-- Corpo redondo peludinho -->
+                <circle cx="100" cy="110" r="75" fill="url(#monsterGrad)"/>
+
+                <!-- Barriguinha mais clara -->
+                <ellipse cx="100" cy="125" rx="45" ry="35" fill="#a5f3fc" opacity="0.65"/>
+
+                <!-- Bochechinhas fofas -->
+                <circle cx="50" cy="115" r="14" fill="url(#blushGrad)"/>
+                <circle cx="150" cy="115" r="14" fill="url(#blushGrad)"/>
+
+                <!-- Olho Esquerdo -->
+                <g id="eye-left">
+                    <circle cx="70" cy="85" r="18" fill="#ffffff"/>
+                    <circle cx="72" cy="85" r="9" fill="#1e293b"/>
+                    <circle cx="76" cy="80" r="4" fill="#ffffff"/>
+                </g>
+
+                <!-- Olho Direito -->
+                <g id="eye-right">
+                    <circle cx="130" cy="85" r="18" fill="#ffffff"/>
+                    <circle cx="128" cy="85" r="9" fill="#1e293b"/>
+                    <circle cx="132" cy="80" r="4" fill="#ffffff"/>
+                </g>
+
+                <!-- Boca do Monstrinho (Muda dinamicamente quando come) -->
+                <!-- Boca Sorridente Normal -->
+                <path id="mouth-happy" d="M80 120 Q100 142 120 120" stroke="#0f172a" stroke-width="6" stroke-linecap="round" fill="none"/>
+                <!-- Boca Aberta Faminta / Mastigando (Oculta inicialmente) -->
+                <g id="mouth-open" class="hidden">
+                    <ellipse cx="100" cy="130" rx="24" ry="18" fill="#881337"/>
+                    <!-- Dentinho de monstro -->
+                    <polygon points="90,113 95,123 100,113" fill="#ffffff"/>
+                    <polygon points="100,113 105,123 110,113" fill="#ffffff"/>
+                    <!-- Língua rosada -->
+                    <path d="M85 138 Q100 146 115 138" stroke="#fb7185" stroke-width="8" stroke-linecap="round" fill="none"/>
+                </g>
+            </svg>
+        </div>
+    </main>
+
+    <!-- Rodapé com Pratinhos de Comida -->
+    <footer class="w-full max-w-xl flex flex-col items-center z-20 flex-none pb-[max(12px,env(safe-area-inset-bottom))]">
+        <p class="text-xs sm:text-sm font-bold text-pink-700/80 mb-2">
+            Toque na comidinha certa para alimentar o monstro!
+        </p>
+        <div id="plates-container" class="flex justify-center items-center gap-3 sm:gap-6 w-full px-2">
+            <!-- 3 pratos gerados via JS -->
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * LÓGICA DO JOGO RANGO MONSTRO
+         */
+
+        // Banco de Alimentos Lúdicos (Frutas, legumes e gostosuras)
+        const FOOD_ITEMS = [
+            { id: "maca",     name: "Maçã",     emoji: "🍎", phrase: "uma maçã bem vermelhinha" },
+            { id: "banana",   name: "Banana",   emoji: "🍌", phrase: "uma banana docinha" },
+            { id: "morango",  name: "Morango",  emoji: "🍓", phrase: "um morango gostoso" },
+            { id: "uva",      name: "Uva",      emoji: "🍇", phrase: "uvinhas roxinhas" },
+            { id: "melancia", name: "Melancia", emoji: "🍉", phrase: "uma fatia de melancia" },
+            { id: "abacaxi",  name: "Abacaxi",  emoji: "🍍", phrase: "um abacaxi" },
+            { id: "cenoura",  name: "Cenoura",  emoji: "🥕", phrase: "uma cenoura crocante" },
+            { id: "milho",    name: "Milho",    emoji: "🌽", phrase: "um milho amarelinho" },
+            { id: "biscoito", name: "Biscoito", emoji: "🍪", phrase: "um biscoito crocante" },
+            { id: "bolo",     name: "Bolo",     emoji: "🍰", phrase: "um pedaço de bolo" },
+            { id: "pao",      name: "Pão",      emoji: "🍞", phrase: "um pãozinho quentinho" },
+            { id: "queijo",   name: "Queijo",   emoji: "🧀", phrase: "um queijinho" }
+        ];
+
+        let currentTarget = null;
+        let score = 0;
+        let isEating = false;
+        let audioCtx = null;
+
+        // Elementos DOM
+        const startScreen = document.getElementById('start-screen');
+        const targetIcon = document.getElementById('target-food-icon');
+        const targetName = document.getElementById('target-food-name');
+        const platesContainer = document.getElementById('plates-container');
+        const scoreText = document.getElementById('score-text');
+        const monsterWrapper = document.getElementById('monster-wrapper');
+        const mouthHappy = document.getElementById('mouth-happy');
+        const mouthOpen = document.getElementById('mouth-open');
+
+        // --- SISTEMA DE SÍNTESE DE VOZ ---
+        function speakText(text, rate = 0.88, pitch = 1.25) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+
+                const voices = window.speechSynthesis.getVoices();
+                const ptVoice = voices.find(v => v.lang.includes('pt-BR') || v.lang.includes('pt'));
+                if (ptVoice) utterance.voice = ptVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function speakWish() {
+            if (!currentTarget) return;
+            speakText(`Eu quero comer ${currentTarget.phrase || currentTarget.name}!`);
+        }
+
+        // --- SISTEMA DE SOM SINTÉTICO (Mastigação e Comemoração) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            if (type === 'munch') {
+                // Som de "Crunch/Nham" crocante
+                for (let i = 0; i < 3; i++) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(350 + Math.random() * 100, now + i * 0.12);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + i * 0.12 + 0.08);
+
+                    gain.gain.setValueAtTime(0.3, now + i * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.08);
+
+                    osc.start(now + i * 0.12);
+                    osc.stop(now + i * 0.12 + 0.08);
+                }
+            } else if (type === 'error') {
+                // Som de "uhm uhm"
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.linearRampToValueAtTime(180, now + 0.25);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'happy') {
+                // Acorde alegre
+                [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    osc.type = 'triangle';
+                    osc.frequency.value = f;
+                    gain.gain.setValueAtTime(0.2, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.25);
+
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.25);
+                });
+            }
+        }
+
+        // --- CORAÇÕES DE FELICIDADE ---
+        function spawnHearts() {
+            const rect = monsterWrapper.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 6; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart text-3xl sm:text-4xl';
+                heart.textContent = ['❤️', '💖', '⭐', '✨'][Math.floor(Math.random() * 4)];
+                heart.style.left = `${cx}px`;
+                heart.style.top = `${cy}px`;
+                const tx = (Math.random() * 120 - 60) + 'px';
+                heart.style.setProperty('--tx', tx);
+                document.body.appendChild(heart);
+
+                setTimeout(() => heart.remove(), 1200);
+            }
+        }
+
+        // --- LÓGICA DAS RODADAS ---
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function nextRound() {
+            isEating = false;
+
+            // Escolhe 3 alimentos diferentes
+            const shuffled = shuffle(FOOD_ITEMS);
+            const options = shuffled.slice(0, 3);
+
+            // Um deles é o alvo desejado
+            currentTarget = options[Math.floor(Math.random() * options.length)];
+
+            // Atualiza balão
+            targetIcon.textContent = currentTarget.emoji;
+            targetName.textContent = currentTarget.name;
+
+            // Restaura boquinha normal
+            mouthHappy.classList.remove('hidden');
+            mouthOpen.classList.add('hidden');
+            monsterWrapper.className = 'monster-idle relative w-48 sm:w-64 h-48 sm:h-64 flex items-center justify-center cursor-pointer';
+
+            // Renderiza os 3 pratinhos de comida
+            platesContainer.innerHTML = '';
+            options.forEach((item) => {
+                const plate = document.createElement('button');
+                plate.className = 'food-plate bg-white border-4 border-slate-200 rounded-3xl p-3 sm:p-5 flex flex-col items-center justify-center w-24 h-24 sm:w-32 sm:h-32 active:scale-95 cursor-pointer';
+                plate.innerHTML = `
+                    <span class="text-4xl sm:text-6xl drop-shadow mb-1">${item.emoji}</span>
+                    <span class="text-xs sm:text-sm font-black text-slate-700">${item.name}</span>
+                `;
+
+                plate.onclick = () => handleFoodClick(item, plate);
+                platesContainer.appendChild(plate);
+            });
+
+            setTimeout(speakWish, 350);
+        }
+
+        function handleFoodClick(chosenItem, plateEl) {
+            if (isEating) return;
+
+            if (chosenItem.id === currentTarget.id) {
+                // ACERTOU! Monstrinho come e mastiga feliz
+                isEating = true;
+                playSound('munch');
+
+                // Abre a boca e mastiga
+                mouthHappy.classList.add('hidden');
+                mouthOpen.classList.remove('hidden');
+                monsterWrapper.className = 'chewing relative w-48 sm:w-64 h-48 sm:h-64 flex items-center justify-center cursor-pointer';
+
+                // Prato some suavemente
+                plateEl.style.transform = 'scale(0)';
+                plateEl.style.opacity = '0';
+
+                // Corações e fala de felicidade
+                setTimeout(() => {
+                    playSound('happy');
+                    spawnHearts();
+                    monsterWrapper.className = 'happy-jump relative w-48 sm:w-64 h-48 sm:h-64 flex items-center justify-center cursor-pointer';
+                    
+                    const compliments = ["Nham nham! Que delícia!", "Muito gostoso! Obrigado!", "Hummm, adorei!", "Que delícia! Mais um!"];
+                    const compliment = compliments[Math.floor(Math.random() * compliments.length)];
+                    speakText(compliment);
+
+                    score++;
+                    scoreText.textContent = `Rango: ${score}`;
+
+                    setTimeout(nextRound, 1500);
+                }, 600);
+
+            } else {
+                // ERROU! Monstrinho recusa suavemente
+                playSound('error');
+                speakText(`Não quero ${chosenItem.name}... Eu quero ${currentTarget.name}!`);
+
+                monsterWrapper.classList.add('shake-head');
+                plateEl.classList.add('border-red-300');
+
+                setTimeout(() => {
+                    monsterWrapper.classList.remove('shake-head');
+                    plateEl.classList.remove('border-red-300');
+                }, 600);
+            }
+        }
+
+        // --- INICIALIZAÇÃO ---
+        function startGame() {
+            initAudio();
+            startScreen.classList.add('hidden-screen');
+            score = 0;
+            scoreText.textContent = `Rango: 0`;
+            nextRound();
+        }
+    </script>
+</body>
+</html>
