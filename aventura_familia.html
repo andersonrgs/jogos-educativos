@@ -177,8 +177,14 @@
          * MOTOR DE JOGO DE PLATAFORMA - COM PERSONAGENS REALISTAS E ALIMENTOS SAUDÁVEIS
          */
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        // Carregamento do Avatar Real do Henrique
+        const henriqueImg = new Image();
+        henriqueImg.src = 'avatar_henrique.png';
+        let henriqueImgLoaded = false;
+        henriqueImg.onload = () => {
+            henriqueImgLoaded = true;
+            renderPreviews();
+        };
 
         let audioCtx = null;
         let selectedHero = 'henrique';
@@ -391,49 +397,38 @@
                 c.fillStyle = '#dc2626';
                 c.fillRect(10, -28 + walkBounce, 7, 10);
 
-                // Cabeça: Pele parda e rosto do Henrique
-                c.fillStyle = '#d49b72'; // Parda saudável
-                c.beginPath();
-                c.arc(0, -54 + walkBounce, 15, 0, Math.PI*2);
-                c.fill();
+                // --- CABEÇA REAL DO HENRIQUE ---
+                if (henriqueImgLoaded) {
+                    // Desenha a foto real do Henrique com recorte transparente
+                    const headW = 38;
+                    const headH = 42;
+                    c.drawImage(henriqueImg, -headW/2, -42 - headH + walkBounce, headW, headH);
+                    
+                    // Pequena máscara de Homem-Aranha estilosa erguida na testa do Henrique
+                    c.fillStyle = '#dc2626';
+                    c.beginPath();
+                    c.ellipse(0, -42 - headH + 4 + walkBounce, 11, 4.5, 0, 0, Math.PI*2);
+                    c.fill();
+                    c.strokeStyle = '#0f172a';
+                    c.lineWidth = 1;
+                    c.stroke();
+                } else {
+                    // Cabeça fallback vetorizada
+                    c.fillStyle = '#d49b72';
+                    c.beginPath();
+                    c.arc(0, -54 + walkBounce, 15, 0, Math.PI*2);
+                    c.fill();
 
-                // Cabelo curto castanho escuro modelado
-                c.fillStyle = '#2d1810';
-                c.beginPath();
-                c.arc(0, -58 + walkBounce, 16.5, Math.PI*0.85, Math.PI*2.15);
-                c.fill();
-                // Mechas de cabelo arrepiadinho/curto
-                c.beginPath();
-                c.moveTo(-12, -60 + walkBounce); c.lineTo(-8, -67 + walkBounce); c.lineTo(-4, -61 + walkBounce);
-                c.lineTo(0, -68 + walkBounce); c.lineTo(5, -61 + walkBounce); c.lineTo(10, -66 + walkBounce);
-                c.fill();
+                    c.fillStyle = '#2d1810';
+                    c.beginPath();
+                    c.arc(0, -58 + walkBounce, 16.5, Math.PI*0.85, Math.PI*2.15);
+                    c.fill();
 
-                // Máscara erguida na testa (detalhe de herói aranha)
-                c.fillStyle = '#dc2626';
-                c.beginPath();
-                c.ellipse(0, -60 + walkBounce, 12, 5, 0, 0, Math.PI*2);
-                c.fill();
-
-                // Olhos expressivos e brilhantes
-                c.fillStyle = '#ffffff';
-                c.beginPath();
-                c.ellipse(5, -53 + walkBounce, 3.5, 4.5, 0, 0, Math.PI*2);
-                c.fill();
-                c.fillStyle = '#1e293b';
-                c.beginPath();
-                c.arc(5.5, -53 + walkBounce, 2.2, 0, Math.PI*2);
-                c.fill();
-                c.fillStyle = '#ffffff';
-                c.beginPath();
-                c.arc(6.5, -54.5 + walkBounce, 1, 0, Math.PI*2);
-                c.fill();
-
-                // Sorriso confiante de herói
-                c.strokeStyle = '#991b1b';
-                c.lineWidth = 2.2;
-                c.beginPath();
-                c.arc(4, -48 + walkBounce, 5, 0.1, Math.PI*0.85);
-                c.stroke();
+                    c.fillStyle = '#1e293b';
+                    c.beginPath();
+                    c.arc(5.5, -53 + walkBounce, 2.2, 0, Math.PI*2);
+                    c.fill();
+                }
             }
             else if (type === 'anderson') {
                 // ==========================================

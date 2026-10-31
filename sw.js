@@ -4,6 +4,7 @@ const ASSETS = [
   './index.html',
   './manifest.json',
   './aventura_familia.html',
+  './avatar_henrique.png',
   './icon-192.png',
   './icon-512.png',
   './Abc_Divertido.html',
