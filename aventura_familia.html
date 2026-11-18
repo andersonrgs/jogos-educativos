@@ -91,22 +91,22 @@
 
             <!-- Grid dos 4 Personagens com Avatares Ricos em Alta Resolução -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 w-full">
-                <!-- Henrique (Homem-Aranha) -->
-                <button onclick="selectCharacter('henrique')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-red-500 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
+                <!-- Super Kid (Herói Mirim) -->
+                <button onclick="selectCharacter('heroi')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-red-500 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center relative">
-                        <img src="char_henrique.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Henrique">
-                        <img src="avatar_henrique.png?v=2" class="absolute -top-1 -right-1 w-8 h-8 rounded-full border-2 border-white shadow-md object-cover bg-white" alt="Foto">
+                        <img src="char_heroi.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Super Kid">
+                        <span class="absolute -top-1 -right-1 w-8 h-8 rounded-full border-2 border-white shadow-md bg-red-600 flex items-center justify-center text-sm">⭐</span>
                     </div>
-                    <span class="text-base sm:text-xl font-black text-red-600 mt-2">Henrique</span>
-                    <span class="text-xs font-bold text-gray-600">🕷️ Homem-Aranha</span>
+                    <span class="text-base sm:text-xl font-black text-red-600 mt-2">Super Kid</span>
+                    <span class="text-xs font-bold text-gray-600">🕷️ Herói Mirim</span>
                 </button>
 
-                <!-- Papai Anderson -->
-                <button onclick="selectCharacter('anderson')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-blue-600 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
+                <!-- Papai -->
+                <button onclick="selectCharacter('papai')" class="char-card bg-white/95 hover:bg-yellow-50 border-4 border-blue-600 rounded-3xl p-3 sm:p-4 flex flex-col items-center shadow-2xl active:scale-95">
                     <div class="h-28 sm:h-36 w-full flex items-center justify-center">
-                        <img src="char_anderson.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Pai Anderson">
+                        <img src="char_papai.png?v=2" class="h-full object-contain drop-shadow-xl" alt="Papai">
                     </div>
-                    <span class="text-base sm:text-xl font-black text-blue-700 mt-2">Pai Anderson</span>
+                    <span class="text-base sm:text-xl font-black text-blue-700 mt-2">Papai</span>
                     <span class="text-xs font-bold text-gray-600">🧔 Barba & Grisalho</span>
                 </button>
 
@@ -151,7 +151,7 @@
             <span id="phase-badge" class="bg-amber-500 text-amber-950 px-2 py-0.5 rounded-full text-xs font-black">Fase 1: O Parque</span>
             <span class="flex items-center gap-1">🍎 <span id="fruits-count" class="text-green-300">0</span></span>
             <span class="flex items-center gap-1">⭐ <span id="stars-count" class="text-yellow-300">0</span></span>
-            <span id="char-name-badge" class="bg-red-500 px-2.5 py-0.5 rounded-full text-white font-bold ml-1">Henrique</span>
+            <span id="char-name-badge" class="bg-red-500 px-2.5 py-0.5 rounded-full text-white font-bold ml-1">Super Kid</span>
         </div>
     </header>
 
@@ -193,18 +193,18 @@
 
         // Carregamento dos Avatares Realistas em Alta Resolução
         const charImages = {
-            henrique: new Image(),
-            anderson: new Image(),
+            heroi: new Image(),
+            papai: new Image(),
             mamae: new Image(),
             vovo: new Image()
         };
-        charImages.henrique.src = 'char_henrique.png?v=2';
-        charImages.anderson.src = 'char_anderson.png?v=2';
+        charImages.heroi.src = 'char_heroi.png?v=2';
+        charImages.papai.src = 'char_papai.png?v=2';
         charImages.mamae.src = 'char_mamae.png?v=2';
         charImages.vovo.src = 'char_vovo.png?v=2';
 
         let audioCtx = null;
-        let selectedHero = 'henrique';
+        let selectedHero = 'heroi';
         let currentPhaseIndex = 0;
         let fruitsCollected = 0;
         let starsCollected = 0;
@@ -510,8 +510,8 @@
             gameRunning = true;
 
             const names = {
-                'henrique': { name: 'Henrique', color: 'bg-red-500', phrase: 'Henrique pronto para a missão! Vamos comer frutas e salvar o dia!' },
-                'anderson': { name: 'Pai Anderson', color: 'bg-blue-600', phrase: 'Pai Anderson na área! Vamos encher a cesta de frutas saudáveis!' },
+                'heroi': { name: 'Super Kid', color: 'bg-red-500', phrase: 'Super Kid pronto para a missão! Vamos comer frutas e salvar o dia!' },
+                'papai': { name: 'Papai', color: 'bg-blue-600', phrase: 'Papai na área! Vamos encher a cesta de frutas saudáveis!' },
                 'mamae': { name: 'Mamãe', color: 'bg-pink-500', phrase: 'Mamãe pronta! Uma maçã por dia dá muita alegria!' },
                 'vovo': { name: 'Vovó', color: 'bg-purple-600', phrase: 'A Vovó adora frutinhas docinhas! Vamos lá!' }
             };

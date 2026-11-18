@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jogos-kids-v6';
+const CACHE_NAME = 'jogos-kids-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -7,15 +7,14 @@ const ASSETS = [
   './aventura_familia.html',
   './corrida_kart.html',
   './three.min.js',
-  './char_henrique.png',
-  './char_anderson.png',
+  './char_heroi.png',
+  './char_papai.png',
   './char_mamae.png',
   './char_vovo.png',
-  './char_henrique.png?v=2',
-  './char_anderson.png?v=2',
+  './char_heroi.png?v=2',
+  './char_papai.png?v=2',
   './char_mamae.png?v=2',
   './char_vovo.png?v=2',
-  './avatar_henrique.png',
   './icon-192.png',
   './icon-512.png',
   './Abc_Divertido.html',
